@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/cloud_con.png</file>
+        <file>res/cloud_dis.png</file>
+        <file>res/localnet.png</file>
+        <file>res/localnet_r.png</file>
+        <file>res/whiteb.png</file>
+    </qresource>
+</RCC>
