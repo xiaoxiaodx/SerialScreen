@@ -1,21 +1,21 @@
 /******************************************************************************
  * 
- * 				Copyright (c), 2020,
+ * 				Copyright (c), 2021,
  * 
  * *****************************************************************************
- * Filename:uart_demo.c
+ * Filename:cmdproc.c
  * 
  *  File Description: 
  * -----------------------
  * 
  * Revision: 
  * Author: fan
- * DataTime: 07-12-2020
+ * DataTime: 04-04-2021
  * Modification History:
  * 	--------------------
  *****************************************************************************/
-#ifndef _UART_DEMO_C_
-#define _UART_DEMO_C_
+#ifndef _CMDPROC_C_
+#define _CMDPROC_C_
 /**---------------------------------------------------------------------------*
 **                         Compiler Flag                                     *
 **---------------------------------------------------------------------------*/
@@ -34,14 +34,12 @@ extern   "C"
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <unistd.h>
-#include <stdlib.h>
 #include "cmdproc.h"
+
 
 /******************************************************************************
 *	Macros
 ******************************************************************************/
-#define DEV_TTY  "/dev/ttyS4"
 
 
 /******************************************************************************
@@ -50,410 +48,22 @@ extern   "C"
 //enum
 
 //Struct
+typedef struct  _tagCMDPROCCB_S{
+    int32_t cmdid;
+    char *cmd;
+    int32_t num;
+    int (*cmdproc)(char *str,int num, void * data );
+}stCMDPROCCB_S;
 
 /******************************************************************************
 *	Constants
 ******************************************************************************/
-typedef struct _ImageInfo_T{
-	int index;
-	int addr;
-	int width;
-	int height;
-	char *data;
-}ImageInfo_T;
 
-typedef struct _ImageParam_T{
-	int imageNum;
-	ImageInfo_T *image;
-}ImageParam_T;
-
-typedef struct _FontInfo_T{
-	int index;
-	int addr;
-	int width;
-	int height;
-	char *data;
-}FontInfo_T;
-
-typedef struct _FontParam_T{
-	int fontNum;
-	FontInfo_T *font;
-}FontParam_T;
-
-typedef struct _ButtonParam_T{
-	int global; //(1字节)   全局1，私有0 
-	char name[6];//(6字节) 控件名字
-	int pageId; //(1字节)
-	int id; //控件ID（1字节）
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int fpic;
-	int bpic;
-	int txtlen;
-	char *txt;
-	int fontIndex;
-	int txtColor;
-	int swType;
-	int downlen;
-	char *downcmd;
-	int uplen;
-	char *upcmd;
-}ButtonParam_T;
-
-typedef enum _ENUM_ALIGNMODE{
-	TopLeft = 0,
-    TopCenter = 1,
-    TopRight = 2,
-    MiddleLeft = 8,
-    MiddleCenter = 9,
-    MiddleRight = 10,
-    BottomLeft = 4,
-    BottomCenter = 5,
-    BottomRight = 6,
-}ENUM_ALIGNMODE;
-
-typedef struct _LabelParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int txtlen;
-	char *txt;
-	int fontIndex; //（1字节）
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int txtSpace; //字间距 1字节
-	ENUM_ALIGNMODE align;//对齐方式 1字节
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}LabelParam_T;
-
-typedef struct _PgbarParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int hov; //（1字节）：0垂直  ，1水平
-	int fpic;  //（2字节）前景色/图索引
-	int bpic;  //（2字节）背景色/背景图索引
-	int percent; //（1字节）进度值
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}PgbarParam_T;
-
-typedef struct _PanelParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int linewidth; //（1字节）线宽度
-	int angle;//（2字节）角度
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}PanelParam_T;
-
-typedef struct _SlideParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int hov; //（1字节）：0垂直  ，1水平
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int min; //（2字节） 最小值
-	int max; //（2字节）最大值
-	int value; //（2字节）当前值
-	int wid; //（1字节）滑块宽度
-	int hgt; //（1字节）滑块高度
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-	int mvlen;//（2字节）
-	char *mvcmd;
-}SlideParam_T;
-
-typedef struct _RolllabelParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int dir; //（1字节）滚动方向
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int step; //（1字节） 滚动距离
-	int period; //（2字节） 间距间隔
-	int fontIndex; //（1字节）字体索引
-	int enable; //（1字节）滚动开关（0停止，1开启）
-	int txtSpace; //字间距 1字节
-	ENUM_ALIGNMODE align;//对齐方式 1字节
-	int txtlen;
-	char *txt;
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}RolllabelParam_T;
-
-//曲线控件
-typedef struct _GraphParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int bpicorcol; //（2字节）
-	int lor; //（1字节） 
-	int gridcolor; //（2字节） 网格颜色
-	int winterval; //（1字节）网格宽
-	int hinterval; //（1字节）网格高
-	int channel; //（1字节）通道数量
-	int channelcolor0; //（2）曲线1颜色
-	int channelcolor1; //（2）曲线2颜色
-	int channelcolor2; //（2）曲线3颜色
-	int channelcolor3; //（2）曲线4颜色
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}GraphParam_T;
-
-typedef struct _RadioParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int horv; //（1）显示方向
-	int focusindex; //（1字节）选中索引
-	int numofitem; //（1字节）选项数量
-	int distance; //（1字节）控件间隔
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}RadioParam_T;
-
-typedef struct _CheckBoxParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int state; //（1字节） 选中状态	
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}CheckBoxParam_T;
-
-typedef struct _HotSpotParam_T{
-	int global;
-	char name[6];
-	int pageId;
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}HotSpotParam_T;
-
-typedef struct _TimerParam_T{
-	int global;
-	char name[6];
-	int pageId;	
-	int id;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int period; //（2字节）定时器周期
-	int enable; //（1字节）定时器开头
-	int eventlen; //（2字节+len）定时器事件长度
-	char *event; //事件内容
-}TimerParam_T;
-
-
-typedef struct _VariableParam_T{
-	int global;
-	char name[6];
-	int pageId;	
-	int id;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int vartype; //（1字节）变量类型
-	int val; //（4字节）
-	int len; //（2字节）
-	char *text;
-}VariableParam_T;
-
-typedef struct _PicParam_T{
-	int global;
-	char name[6];
-	int pageId;	
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int picIndex; //（2字节）   图片索引
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}PicParam_T;
-
-typedef struct _CPicParam_T{
-	int global;
-	char name[6];
-	int pageId;	
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int picIndex; //（2字节）   图片索引
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}CPicParam_T;
-
-typedef struct _CNumParam_T{
-	int global;
-	char name[6];
-	int pageId;	
-	int id;
-	int x;
-	int y;
-	int width;
-	int height;
-	int level; //控件所在层（1字节）：1or2  1在下 2在上
-	int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2) 
-	int fpicorcol; //（2字节）
-	int bpicorcol; //（2字节）
-	int fontIndex; //（1字节）字体索引
-	int text; //（4字节）显示的数字
-	ENUM_ALIGNMODE align;//对齐方式 1字节
-	int downlen; //（2字节）
-	char *downcmd;
-	int uplen;//（2字节）
-	char *upcmd;
-}CNumParam_T;
-
-typedef struct _PageInfo_T{
-	int index;
-	int addr;
-	int global;
-	int picornot;
-	int bcOrpi; //BackColorOrPicIndex
-	char objname[9];
-	int buttonNum;
-	ButtonParam_T *buttonInfo;
-	int labelNum;
-	LabelParam_T *labelInfo;
-	int pgbarNum;
-	PgbarParam_T *pgbarInfo;
-	int panelNum;
-	PanelParam_T *panelInfo;
-	int slideNum;
-	SlideParam_T *slideInfo;
-	int rolllabelNum;
-	RolllabelParam_T *rolllableInfo;
-	int graphNum;
-	GraphParam_T *graphInfo;
-	int radioNum;
-	RadioParam_T *radioInfo;
-	int checkboxNum;
-	CheckBoxParam_T *checkboxInfo;
-	int hotspotNum;
-	HotSpotParam_T *hotspotInfo;
-	int timerNum;
-	TimerParam_T *timerInfo;
-	int variableNum;
-	VariableParam_T *variableInfo;
-	int picNum;
-	PicParam_T *picInfo;
-	int cpicNum;
-	CPicParam_T *cpicInfo;
-	int numNum;
-	CNumParam_T *numInfo;
-}PageInfo_T;
-
-typedef struct _PageParam_T{
-	int pageNum;
-	PageInfo_T *page;
-}PageParam_T;
 
 /******************************************************************************
 *	Variables
 ******************************************************************************/
 //local variables
-static  int tty_fd = -1 ;
 
 //extern variables
 
@@ -461,26 +71,94 @@ static  int tty_fd = -1 ;
 *	Functions Prototypes
 ******************************************************************************/
 //local Functions Prototypes
+int page_proc(char *str,int num,void *data);
+int clean_proc(char *str,int num,void *data);
+int point_proc(char *str,int num,void *data);
+int line_proc(char *str,int num,void *data);
+int rect_proc(char *str,int num,void *data);
+int frect_proc(char *str,int num,void *data);
 
+int pie_proc(char *str,int num,void *data);
+int arc_proc(char *str,int num,void *data);
+int cir_proc(char *str,int num,void *data);
+int fcir_proc(char *str,int num,void *data);
+
+int pic_proc(char *str,int num,void *data);
+int picc_proc(char *str,int num,void *data);
+int str_proc(char *str,int num,void *data);
+int ref_proc(char *str,int num,void *data);
+int click_proc(char *str,int num,void *data);
+
+
+int ecoh_proc(char *str,int num,void *data);
+int ecohn_proc(char *str,int num,void *data);
+int hide_proc(char *str,int num,void *data);
+int show_proc(char *str,int num,void *data);
+int re_proc(char *str,int num,void *data);
+
+
+int addn_proc(char *str,int num,void *data);
+
+
+int add_proc(char *str,int num,void *data);
+int del_proc(char *str,int num,void *data);
+int cal_proc(char *str,int num,void *data);
+int reset_proc(char *str,int num,void *data);
+int baud_proc(char *str,int num,void *data);
+int dim_proc(char *str,int num,void *data);
+int rand_proc(char *str,int num,void *data);
+int slen_proc(char *str,int num,void *data);
+int scopy_proc(char *str,int num,void *data);
+int sncopy_proc(char *str,int num,void *data);
+int sleep_proc(char *str,int num,void *data);
+
+serialParam_T serParam = {0};
 
 //extern Functions Prototypes
-int Bytes2String(unsigned char *pSrc, int nSrcLen, unsigned char *pDst, int nDstMaxLen);
+stCMDPROCCB_S cmdProcTbl[]={
+    {1,"page",1,page_proc},
+    {2,"clean",1,clean_proc},
+    {3,"point",3,point_proc},
+    {4,"line",5,line_proc},
+    {5,"rect",5,rect_proc},
+    {6,"fillRect",5,frect_proc},
 
+    {7,"pie",6,pie_proc},
+    {8,"arc",7,arc_proc},
+    {9,"circle",4,cir_proc},
+    {10,"fillCircle",4,fcir_proc},
+    {11,"picture",3,pic_proc},
+    {12,"cutChart",5,picc_proc},
+
+    {13,"str",10,str_proc},
+    {14,"refresh",1,ref_proc},
+    {15,"click",2,click_proc},
+
+    {16,"echo",1,ecoh_proc},
+    {17,"echon",2,ecohn_proc},
+    {18,"hide",2,hide_proc},
+    {19,"show",2,show_proc},
+    {20,"re",1,re_proc},
+    
+    {0x1000|21,"curveAddData",3,addn_proc},
+
+    {22,"curveAdd",3,add_proc},
+    {23,"curveDelete",2,del_proc},
+    {24,"calTouch",0,cal_proc},
+    {25,"reset",0,reset_proc},
+    {26,"baudRate",1,baud_proc},
+    {27,"lightAdjust",1,dim_proc},
+    {28,"rand",1,rand_proc},
+    {29,"strLen",2,slen_proc},
+    {30,"strCopy",2,scopy_proc},
+    {31,"numCopy",3,sncopy_proc},
+    {32,"sleep",1,sleep_proc},
+    
+    {-1,NULL,1,NULL},
+};
 /******************************************************************************
 *	Functions
 ******************************************************************************/
-static int tty_send(void *buf ,int len)
-{
-    int     s32Ret = -1 ;
-
-    s32Ret = write(tty_fd, buf,len) ;
-    if(s32Ret < 0)
-    {
-        printf("Write() error:%s\n",strerror(errno)) ;
-    }
-    return  s32Ret ;
-}
-
 int btos(char *buf)
 {
 	int value = 0;
@@ -1340,10 +1018,490 @@ int CNumAnalysis(int fd,int num,CNumParam_T **info)
 	return 1;
 }
 
+//页面
+int page_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pageData_S param = {0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.id));
+    printf("[%s:%d]:%d :%d\r\n",__FUNCTION__,__LINE__,ret,(param.id));
+
+    return ret;
+}
+
+int clean_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    cleanData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.color));
+    printf("[%s:%d]:%d :%d\r\n",__FUNCTION__,__LINE__,ret,(param.color));
+    return ret;
+}
+
+int point_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pointData_S param = {0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.color));
+    printf("[%s:%d]:%d :%d %d %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.color));
+    return ret;
+}
+
+int line_proc(char *str,int num,void *data)
+{
+    int ret=-1;  
+    lineData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x1),&(param.y1),&(param.x2),&(param.y2),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x1),(param.y1),(param.x2),(param.y2),(param.color));
+    return ret;
+}
+
+int rect_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    rectData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.color));
+    return ret;
+}
+
+int frect_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    frectData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.color));
+    return ret;
+}
+
+int pie_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pieData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d ,%d:%d ,%d ,%d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.a0),(param.a1),(param.color));
+    return ret;
+}
+
+int arc_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    arcData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.pensize),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d ,%d:%d ,%d ,%d,%d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.a0),(param.a1),(param.pensize),(param.color));
+    return ret;
+}
+
+int cir_proc(char *str,int num,void *data)
+{
+    int ret=-1;  
+    cirData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d  %d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.color));
+    return ret;
+}
+
+int fcir_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    fcirData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d  %d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.color));
+    return ret;
+}
+
+int pic_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    picData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.id));
+    printf("[%s:%d]:%d :(%d, %d :%d )\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.id));
+    return ret;
+}
+
+int picc_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    piccData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.id));
+    printf("[%s:%d]:%d :(%d, %d %d, %d :%d )\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.id));
+    return ret;
+}
+
+int str_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    strData_S param={0};
+    memset(&param,0,sizeof(param));
+	
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%s",\
+            &(param.x),&(param.y),&(param.width),&(param.hight),\
+            &(param.fontindex),&(param.alignment),&(param.Usebackcolor),\
+            &(param.fcolor),&(param.bcolor),\
+            &(param.str));
+    printf("[%s:%d]:%d :%d,%d,%d,%d;%d,%d,%d;%d,%d;%s\r\n",__FUNCTION__,__LINE__,ret,\
+            (param.x),(param.y),(param.width),(param.hight),\
+            (param.fontindex),(param.alignment),(param.Usebackcolor),\
+            (param.fcolor),(param.bcolor),\
+            (param.str));
+            return ret;
+}
+
+int ref_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    refData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%s",&(param.name));
+    printf("[%s:%d]:%d :%s\r\n",__FUNCTION__,__LINE__,ret,(param.name));
+    return ret;
+}
+
+int click_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    clickData_S param={0}; 
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.event));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.event));
+    return ret;
+}
+
+int ecoh_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    ecohData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.name));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.name) );
+    return ret;
+}
+
+int ecohn_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    ecohnData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d",&(param.name),&(param.n));
+    printf("[%s:%d]:%d :(%d ,%d )\r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.n) );
+    return ret;
+}
+
+int hide_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    hideData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.state));
+    return ret;
+}
+
+int show_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    showData_S param={0};   
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.state));
+    return ret;
+}
+
+int re_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    reData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.en));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.en));
+    return ret;
+}
+
+int addn_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    addnData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.num));
+    printf("[%s:%d]:%d :%s %d %d\r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel),(param.num));
+
+    return ret;
+}
+
+int add_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    addData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.data));
+    printf("[%s:%d]:%d :%s %d %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel),(param.data));
+    return ret;
+}
+
+int del_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    delData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.channel));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel));
+    return ret;
+}
+
+int cal_proc(char *str,int num,void *data)
+{
+     return 0;
+}
+
+int reset_proc(char *str,int num,void *data)
+{
+     return 0;
+}
+
+int baud_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    baudData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.baud));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.baud));
+    return ret;
+}
+
+int dim_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    dimData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.val)  );
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.val) );
+    return ret;
+}
+
+int rand_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    randData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.val));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.val));
+    return ret;
+}
+
+int slen_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    slenData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.val));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.val));
+    return ret;
+}
+
+int scopy_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    scopyData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%[^,]",&(param.dst),&(param.src));
+    printf("[%s:%d]:%d :%s %s  \r\n",__FUNCTION__,__LINE__,ret,(param.dst),(param.src));
+    return ret;
+}
+
+int sncopy_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    sncopyData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%[^,],%d",&(param.dst),&(param.src),&(param.num));
+    printf("[%s:%d]:%d :%s %s %d \r\n",__FUNCTION__,__LINE__,ret,(param.dst),(param.src),(param.num));
+    return ret;
+}
+
+int sleep_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    sleepData_S param={0};
+	memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.state)  );
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.state) );
+    return ret;
+}
+
+int cmdproc(char *str)
+{
+	int i;
+    char cmdstr[64]={0};
+    int ret=-1;
+	char *pParam=NULL;
+	
+    memset(cmdstr,0x0,sizeof(cmdstr));
+    ret=sscanf(str,"%s ",&cmdstr);
+	printf("[%s:%d]:cmdstr=%s,ret = %d,len=%d\r\n",__FUNCTION__,__LINE__,cmdstr,ret,strlen(cmdstr));
+    if(ret == 1)
+    {
+        for(i=0;i<sizeof(cmdProcTbl)/sizeof(cmdProcTbl[0]);i++)
+        {        
+            if(cmdProcTbl[i].cmdid>0)
+            {
+            	if(!strcmp(cmdProcTbl[i].cmd,cmdstr))
+				{
+					pParam=str+strlen(cmdProcTbl[i].cmd)+1;
+				    printf("[%s:%d]:pParam=%s!cmd = %s,cmdproc = %p\r\n",__FUNCTION__,__LINE__,pParam,cmdProcTbl[i].cmd,cmdProcTbl[i].cmdproc);
+					ret=cmdProcTbl[i].cmdproc(pParam,cmdProcTbl[i].num,NULL);
+				    break;
+				}
+            }
+        }
+    }
+
+    return ret;
+}	
+
+static int findHead(char *str,int *len)
+{
+	int i = 0;
+	int buflen = *len;
+	char buf[128];
+
+	memset(buf,0,sizeof(buf));
+	memcpy(buf,str,buflen);
+	for(i= 0;i < buflen;i++)
+	{
+		if(buf[i] == 0x01 || buf[i] == 0x02)
+		{
+			memcpy(str,buf+i+1,buflen); //去掉头
+			*len = buflen - (i + 1);
+			return 1;
+		}	
+	}
+
+	return 0;
+}
+
+static int findTrail(char *str,int len,int *posit)
+{
+	int i = 0;
+
+	for(i= 0;i < len;i++)
+	{
+		if(str[i] == 0x0b)
+		{
+			*posit = i;
+			return 1;
+		}	
+	}
+
+	return 0;
+}
+
+int ParseSerialInt()
+{
+	memset(&serParam,0,sizeof(serialParam_T));
+	memset(serParam.buf,0,sizeof(serParam.buf)); 
+	return 0;
+}
+
+int ParseSerialSend(char *s_buf,int len)
+{
+	tty_send(s_buf,len);
+	return 0;
+}
+
+int ParseSerialComm(char *str,int len)
+{
+	int ret = -1;
+	int endPosit = 0;
+	char sendbuf[512];
+	int sendlen;
+	
+	if(serParam.headflag == 0 && serParam.loadflag == 0) //不是下载模式
+	{
+		if(findHead(str,&len) == 1) //find head
+		{
+			serParam.headflag = 1;			
+		}
+		else
+		{
+			return -1;
+		}
+	}
+	else if(serParam.loadflag == 1)
+	{
+		if(str[0] == 0x80) //80 EF CD 20 1C
+		{			
+			int binlen;
+			int speed;
+
+			binlen = btos(str + 1);
+			speed = btos(str + 5);
+			
+			printf("[%s:%d]:binlen:0x%x,speed:0x%x!!!",__FUNCTION__,__LINE__,binlen,speed);
+			
+			memset(sendbuf,0,sizeof(sendbuf));
+			sendbuf[0] = 0x81;
+			sendlen = 1;
+			ParseSerialSend(sendbuf,sendlen);
+		}
+	}
+
+	
+	if(len > 0)
+	{
+		if(findTrail(str,len,&endPosit) == 1) //find trail
+		{
+			serParam.trailflag = 1;
+			memcpy(serParam.buf+serParam.posit,str,endPosit);//0xb 结束符不拷贝
+			serParam.posit += endPosit;
+			printf("[%s:%d]:serParam.buf:%s!!!\n",__FUNCTION__,__LINE__,serParam.buf);
+			if(!strcmp("load",serParam.buf)) //02 6C 6F 61 64 0B
+			{
+				printf("start to load data!!!!\n");
+				memset(sendbuf,0,sizeof(sendbuf));
+				sprintf(sendbuf,"%s,%s,%s,%s,%s","t1","320*480","h1","f030","64");
+				sendlen = strlen(sendbuf);
+				ParseSerialSend(sendbuf,sendlen);
+				ParseSerialSend("rst",3);
+				serParam.loadflag = 1;
+			}
+			else
+			{
+				cmdproc(serParam.buf);
+				memset(&serParam,0,sizeof(serialParam_T));
+				memset(serParam.buf,0,sizeof(serParam.buf)); 
+				if(len - (endPosit + 1) > 0) //0xb 结束符要减去
+				{
+					memcpy(serParam.buf+serParam.posit,str+endPosit,len - endPosit);
+					ParseSerialComm(serParam.buf,len-endPosit);
+				}
+			}
+		}
+		else
+		{
+			memcpy(serParam.buf+serParam.posit,str,len);
+			serParam.posit += len;
+		}
+	}
+
+	return 0;
+}
+
 int analysisBin()
 {
 	int fd = 0;
-	fd = open("./LKdata.bin", O_RDWR);
+	fd = open("./LKdata.bin", O_RDWR); //串口接收bin文件到一个固定的位置或者SD卡拷贝到固定路径
 
 	ImageParam_T imageInfo = {0};
 	FontParam_T fontInfo = {0};
@@ -1364,35 +1522,44 @@ int analysisBin()
 	pageInfo.pageNum = btos(buf+12);
 	printf("[%s:%d]:direction:%d,imageNum:%d,fontNum:%d,pageNum:%d\n",__FUNCTION__,__LINE__,direction,imageInfo.imageNum,fontInfo.fontNum,pageInfo.pageNum);
 
-	imageInfo.image = (ImageInfo_T *)malloc(sizeof(ImageInfo_T) * imageInfo.imageNum);
-	memset(buf,0,sizeof(buf));
-	read(fd,buf,4*imageInfo.imageNum); //图片地址
-	for(i = 0;i < imageInfo.imageNum;i++)
-	{		
-		imageInfo.image[i].addr = btos(buf+4*i);
-		imageInfo.image[i].index = i;
-		printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
-	}
-
-	fontInfo.font = (FontInfo_T *)malloc(sizeof(FontInfo_T) * fontInfo.fontNum);
-	memset(buf,0,sizeof(buf));
-	read(fd,buf,4*fontInfo.fontNum); //字库地址
-	for(i = 0;i < fontInfo.fontNum;i++)
+	if(imageInfo.imageNum > 0)
 	{
-		fontInfo.font[i].addr = btos(buf+4*i);	
-		printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
+		imageInfo.image = (ImageInfo_T *)malloc(sizeof(ImageInfo_T) * imageInfo.imageNum);
+		memset(buf,0,sizeof(buf));
+		read(fd,buf,4*imageInfo.imageNum); //图片地址
+		for(i = 0;i < imageInfo.imageNum;i++)
+		{		
+			imageInfo.image[i].addr = btos(buf+4*i);
+			imageInfo.image[i].index = i;
+			printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
+		}
 	}
 
-	pageInfo.page = (PageInfo_T *)malloc(sizeof(PageInfo_T)*pageInfo.pageNum);
-	memset(buf,0,sizeof(buf));
-	read(fd,buf,4*pageInfo.pageNum); //页面地址
-	for(i = 0;i < pageInfo.pageNum;i++)
+	if(fontInfo.fontNum > 0)
 	{
-		pageInfo.page[i].addr = btos(buf+4*i);		
-		pageInfo.page[i].index = i;
-		printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
+		fontInfo.font = (FontInfo_T *)malloc(sizeof(FontInfo_T) * fontInfo.fontNum);
+		memset(buf,0,sizeof(buf));
+		read(fd,buf,4*fontInfo.fontNum); //字库地址
+		for(i = 0;i < fontInfo.fontNum;i++)
+		{
+			fontInfo.font[i].addr = btos(buf+4*i);	
+			printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
+		}
 	}
 
+	if(pageInfo.pageNum > 0)
+	{
+		pageInfo.page = (PageInfo_T *)malloc(sizeof(PageInfo_T)*pageInfo.pageNum);
+		memset(buf,0,sizeof(buf));
+		read(fd,buf,4*pageInfo.pageNum); //页面地址
+		for(i = 0;i < pageInfo.pageNum;i++)
+		{
+			pageInfo.page[i].addr = btos(buf+4*i);		
+			pageInfo.page[i].index = i;
+			printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
+		}
+	}
+	
 	//开始读取图片头数据(8位) + 图片数据
 	for(i = 0;i < imageInfo.imageNum;i++)
 	{
@@ -1749,127 +1916,6 @@ int analysisBin()
 	
 }
 
-
-int recvEnd(char *dataBuf,int size)
-{
-	char r_buf[512];
-	int	s32Ret = -1,i = 0,findend = 0;
-
-	memset(r_buf,0,sizeof(r_buf));
-	s32Ret = uartRecv(r_buf,size);
-	for(i = 0;i < s32Ret;i++)
-	{
-		if(r_buf[i] == 0xb)
-		{
-			memcpy(dataBuf,r_buf,i);
-			findend = 1;
-			break;
-		}
-	}
-	
-	if(findend != 1)
-	{
-		size = size - s32Ret;
-		if(size > 0)
-		{
-			memcpy(dataBuf,r_buf,s32Ret);
-			recvEnd(dataBuf+s32Ret,size);
-		}
-		else
-		{
-			return -1;
-		}
-	}
-	return 0;
-}
-/*
-int main(int argc, char **argv)
-{
-    int	s32Ret = -1,i = 0;
-	int sendlen = 0;
-    char r_buf[512];
-	char s_buf[512];
-	char data_buf[512];
-
-    ttyS4Init();
-	
-	memset(data_buf,0,sizeof(data_buf));
-	analysisBin();
-	return 0;
-    while(1)
-    {
-		memset(r_buf,0,sizeof(r_buf));
-		s32Ret = uartRecv(r_buf,1); //读头
-		if(s32Ret > 0)
-		{
-			if(r_buf[0] == 0x01 || r_buf[0] == 0x02)
-			{
-				memset(data_buf,0,sizeof(data_buf));
-				recvEnd(data_buf,512);
-				printf("[%s:%d]:data_buf:%s!!!",__FUNCTION__,__LINE__,data_buf);
-				if(!strcmp("load",data_buf))
-				{
-					printf("start to load data!!!!\n");
-					memset(s_buf,0,sizeof(s_buf));
-					sprintf(s_buf,"%s,%s,%s,%s,%s","t1","128*64","h1","f030","64");
-					sendlen = strlen(s_buf);
-					tty_send(s_buf,sendlen);
-				}
-				else
-				{
-					cmdproc(data_buf);
-				}
-			}
-			else if(r_buf[i] == 0x80)
-			{
-				char binlen[32];
-				char speed[32];
-				
-				memset(binlen,0,sizeof(binlen));
-				memcpy(binlen,r_buf+i+1,4);
-				printf("[%s:%d]:binlen:%s!!!",__FUNCTION__,__LINE__,binlen);
-				
-				memset(speed,0,sizeof(speed));
-				memcpy(speed,r_buf+i+5,4);
-				printf("[%s:%d]:speed:%s!!!",__FUNCTION__,__LINE__,speed);
-				
-				memset(s_buf,0,sizeof(s_buf));
-				s_buf[0] = 0x81;
-				tty_send(s_buf,1);
-				
-				//uartRecv(r_buf,binlen);
-			}
-		}
-    }
- 
-    close(tty_fd) ;
-    return 0 ;
-}
-
-*/
-int Bytes2String(unsigned char *pSrc, int nSrcLen, unsigned char *pDst, int nDstMaxLen)
-{
-    if (pDst != NULL)
-    {
-        *pDst = 0;
-    }
-
-    if (pSrc == NULL || nSrcLen <= 0 || pDst == NULL || nDstMaxLen <= nSrcLen * 2)
-    {
-        return 0;
-    }
-
-    const char szTable[] = "0123456789ABCDEF";
-    int i;
-    for (i = 0; i < nSrcLen; i++)
-    {
-        *pDst++ = szTable[pSrc[i] >> 4];
-        *pDst++ = szTable[pSrc[i] & 0x0f];
-    }
-    *pDst = '\0';
-    return  nSrcLen * 2;
-}
-
 /**---------------------------------------------------------------------------*
 **                         Compiler Flag                                     *
 **---------------------------------------------------------------------------*/
@@ -1878,5 +1924,5 @@ extern   "C"
 }
 #endif
 
-#endif	//_UART_DEMO_C_
+#endif	//_CMDPROC_C_
 

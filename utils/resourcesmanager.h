@@ -6,14 +6,18 @@
 #include <QMap>
 class ResourcesManager
 {
+
+
 public:
     ResourcesManager();
+    static ResourcesManager *resmanager;
+    static ResourcesManager *getInstance();
 
     QImage getImage(int index);
     QString getImageAbsolutePath(int index);
     QString getFontFamily(int index);
     QString getFontAbsolutePath(int index);
-    void saveImage(int index,int w,int h,int format,unsigned char *data);
+    void saveImage(int index,int w,int h,int format,char *data);
     void saveFont(int index,char *data,int datalen);
 
 

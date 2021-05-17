@@ -17,9 +17,7 @@
 #include "mywidget/myprogressbar.h"
 #include "mywidget/mysilder.h"
 #include "mywidget/myrolllabel.h"
-
 #include "mywidget/mygraph.h"
-#include "uart/uarttest.h"
 #include "mywidget/myradio.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -34,6 +32,14 @@ MainWindow::MainWindow(QWidget *parent)
     //this->setWindowFlags(Qt::FramelessWindowHint);//去掉标题栏
     init();
 
+
+
+
+    connect(&serialUtils,&SerialUtils::signal_addMWidget,this,&MainWindow::slot_addMWidget);
+    connect(&serialUtils,&SerialUtils::signal_addPage,this,&MainWindow::slot_addPage);
+
+    serialUtils.analysisBin();
+    //initSerialPort(115200);
 }
 
 
@@ -74,10 +80,12 @@ void MainWindow::init(){
     this->setCentralWidget(rootWidget);
 
 
+    //btntest();
 
+
+    //initSerialPort();
 
     btntest();
-
 }
 #include <QGuiApplication>
 void MainWindow::btntest(){
@@ -113,11 +121,11 @@ void MainWindow::btntest(){
 
         MyButton *mbtn = new MyButton(15,"btn1");
         addMWidget(mbtn,10,10,50,50);
-        mbtn->setDefault_bgimg("H:/dmjProgram/qtPro/SerialScreen/res/1111111.png");
-        mbtn->setDefault_bgimg_press("H:/dmjProgram/qtPro/SerialScreen/res/whiteb.png");
-        mbtn->setDefault_bgcolor(31);
-        mbtn->setDefault_bgcolor_press(0);
-        mbtn->setBtnType(1);
+        //        mbtn->setDefault_bgimg("H:/dmjProgram/qtPro/SerialScreen/res/1111111.png");
+        //        mbtn->setDefault_bgimg_press("H:/dmjProgram/qtPro/SerialScreen/res/whiteb.png");
+        //        mbtn->setDefault_bgcolor(31);
+        //        mbtn->setDefault_bgcolor_press(0);
+        //        mbtn->setBtnType(1);
         mbtn->updateStyle();
 
     });
@@ -233,12 +241,12 @@ void MainWindow::btntest(){
     });
 
 
-    QPushButton *btn_test11 = new QPushButton("test11",this);
-    QPushButton *btn_test12 = new QPushButton("test12",this);
-    btn_test11->setGeometry(300,300,300,100);
-    btn_test12->setGeometry(400,300,300,100);
-    btn_test11->raise();
-//    btn_test12->raise();
+    //    QPushButton *btn_test11 = new QPushButton("test11",this);
+    //    QPushButton *btn_test12 = new QPushButton("test12",this);
+    //    btn_test11->setGeometry(300,300,300,100);
+    //    btn_test12->setGeometry(400,300,300,100);
+    //    btn_test11->raise();
+    //    btn_test12->raise();
 }
 
 void MainWindow::addMWidget(QWidget *mwbase,int x,int y,int w,int h){
@@ -256,12 +264,48 @@ void MainWindow::addPage(int id,QString name){
     MyPage *page = new MyPage(id,name);
 
 
-    QImage img(":/res/whiteb.png");
+    //QImage img(":/res/whiteb.png");
     // page->addShape(new MImage(0,0,100,100,10,img));
     // page->addShape( new MRect(50,50,70,70,true,QColor(0,0,255),10));
     //page->addShape(new MImage(0,0,100,100,5,img));
     rootWidget->addWidget(page);
 
+}
+
+
+void MainWindow::slot_addPage(int id,QString name){
+
+    qDebug()<<"添加页";
+    MyPage *page = new MyPage(id,name);
+    rootWidget->addWidget(page);
+
+}
+
+void MainWindow::slot_addMWidget(int pageid,QWidget *mwbase,int x,int y,int w,int h)
+{
+
+
+    qDebug()<<"添加控件";
+    MyPage *page =  (MyPage*)rootWidget->widget(pageid);
+
+    mwbase->setParent(page);
+    mwbase->setGeometry(x,y,w,h);
+    mwbase->show();
+
+}
+
+MyPage* MainWindow::findPage(int id)
+{
+    int nCount = rootWidget->count();
+    for (int i=0;i<nCount;i++) {
+
+        MyPage *curpage = (MyPage*)(rootWidget->widget(i));
+        if(curpage->getId()==id){
+
+            return curpage;
+        }
+    }
+    return nullptr;
 }
 
 void MainWindow::switchPage(int id)
@@ -313,19 +357,32 @@ void MainWindow::switchPage(){
 void MainWindow::initSerialPort(int baudrate){
 
 
+
+    serialPort.setPortName("COM2");
     serialPort.setBaudRate(baudrate,QSerialPort::AllDirections);//设置波特率和读写方向
     serialPort.setDataBits(QSerialPort::Data8);      //数据位为8位
     serialPort.setFlowControl(QSerialPort::NoFlowControl);//无流控制
     serialPort.setParity(QSerialPort::NoParity); //无校验位
     serialPort.setStopBits(QSerialPort::OneStop); //一位停止位
 
+
     connect(&serialPort,&QSerialPort::readyRead,this,&MainWindow::slot_serialRead);
+
+    if(!serialPort.open(QIODevice::ReadWrite))
+    {
+        qDebug()<<"无法打开串口！";
+        return;
+    }
 }
 
 void MainWindow::slot_serialRead(){
 
     QByteArray arr = serialPort.readAll();
     //arr.data();
+
+    qDebug()<<"slot_serialRead:"<<arr.toHex();
+
+    serialUtils.ParseSerialComm(arr.data(),arr.length());
 }
 
 MainWindow::~MainWindow()

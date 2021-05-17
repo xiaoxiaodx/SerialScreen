@@ -1,417 +1,160 @@
-#ifndef UARTTEST_H
-#define UARTTEST_H
+/******************************************************************************
+ *
+ * 				Copyright (c), 2021,
+ *
+ * *****************************************************************************
+ * Filename:cmdproc.c
+ *
+ *  File Description:
+ * -----------------------
+ *
+ * Revision:
+ * Author: fan
+ * DataTime: 04-04-2021
+ * Modification History:
+ * 	--------------------
+ *****************************************************************************/
 
-#include "cmdproc.h"
+/**---------------------------------------------------------------------------*
+**                         Compiler Flag                                     *
+**---------------------------------------------------------------------------*/
 
-#include "stdio.h"
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
+/******************************************************************************
+*	Include Files
+ *****************************************************************************/
+#include <stdio.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include "cmdproc.h"
+#include <QDebug>
 
+/******************************************************************************
+*	Macros
+******************************************************************************/
+
+
+/******************************************************************************
+*	Types
+******************************************************************************/
+//enum
 
 //Struct
+typedef struct  _tagCMDPROCCB_S{
+    int32_t cmdid;
+    char *cmd;
+    int32_t num;
+    int (*cmdproc)(char *str,int num, void * data );
+}stCMDPROCCB_S;
 
 /******************************************************************************
 *	Constants
 ******************************************************************************/
-typedef struct _ImageInfo_T{
-    int index;
-    int addr;
-    int width;
-    int height;
-    char *data;
-}ImageInfo_T;
-
-typedef struct _ImageParam_T{
-    int imageNum;
-    ImageInfo_T *image;
-}ImageParam_T;
-
-typedef struct _FontInfo_T{
-    int index;
-    int addr;
-    int width;
-    int height;
-    char *data;
-}FontInfo_T;
-
-typedef struct _FontParam_T{
-    int fontNum;
-    FontInfo_T *font;
-}FontParam_T;
-
-typedef struct _ButtonParam_T{
-    int global; //(1字节)   全局1，私有0
-    char name[6];//(6字节) 控件名字
-    int pageId; //(1字节)
-    int id; //控件ID（1字节）
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int fpic;
-    int bpic;
-    int txtlen;
-    char *txt;
-    int fontIndex;
-    int txtColor;
-    int swType;
-    int downlen;
-    char *downcmd;
-    int uplen;
-    char *upcmd;
-}ButtonParam_T;
-
-typedef enum _ENUM_ALIGNMODE{
-    TopLeft = 0,
-    TopCenter = 1,
-    TopRight = 2,
-    MiddleLeft = 8,
-    MiddleCenter = 9,
-    MiddleRight = 10,
-    BottomLeft = 4,
-    BottomCenter = 5,
-    BottomRight = 6,
-}ENUM_ALIGNMODE;
-
-typedef struct _LabelParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int txtlen;
-    char *txt;
-    int fontIndex; //（1字节）
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int txtSpace; //字间距 1字节
-    ENUM_ALIGNMODE align;//对齐方式 1字节
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}LabelParam_T;
-
-typedef struct _PgbarParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int hov; //（1字节）：0垂直  ，1水平
-    int fpic;  //（2字节）前景色/图索引
-    int bpic;  //（2字节）背景色/背景图索引
-    int percent; //（1字节）进度值
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}PgbarParam_T;
-
-typedef struct _PanelParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int linewidth; //（1字节）线宽度
-    int angle;//（2字节）角度
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}PanelParam_T;
-
-typedef struct _SlideParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int hov; //（1字节）：0垂直  ，1水平
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int min; //（2字节） 最小值
-    int max; //（2字节）最大值
-    int value; //（2字节）当前值
-    int wid; //（1字节）滑块宽度
-    int hgt; //（1字节）滑块高度
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-    int mvlen;//（2字节）
-    char *mvcmd;
-}SlideParam_T;
-
-typedef struct _RolllabelParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int dir; //（1字节）滚动方向
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int step; //（1字节） 滚动距离
-    int period; //（2字节） 间距间隔
-    int fontIndex; //（1字节）字体索引
-    int enable; //（1字节）滚动开关（0停止，1开启）
-    int txtSpace; //字间距 1字节
-    ENUM_ALIGNMODE align;//对齐方式 1字节
-    int txtlen;
-    char *txt;
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}RolllabelParam_T;
-
-//曲线控件
-typedef struct _GraphParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int bpicorcol; //（2字节）
-    int lor; //（1字节）
-    int gridcolor; //（2字节） 网格颜色
-    int winterval; //（1字节）网格宽
-    int hinterval; //（1字节）网格高
-    int channel; //（1字节）通道数量
-    int channelcolor0; //（2）曲线1颜色
-    int channelcolor1; //（2）曲线2颜色
-    int channelcolor2; //（2）曲线3颜色
-    int channelcolor3; //（2）曲线4颜色
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}GraphParam_T;
-
-typedef struct _RadioParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int horv; //（1）显示方向
-    int focusindex; //（1字节）选中索引
-    int numofitem; //（1字节）选项数量
-    int distance; //（1字节）控件间隔
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}RadioParam_T;
-
-typedef struct _CheckBoxParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int state; //（1字节） 选中状态
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}CheckBoxParam_T;
-
-typedef struct _HotSpotParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}HotSpotParam_T;
-
-typedef struct _TimerParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int period; //（2字节）定时器周期
-    int enable; //（1字节）定时器开头
-    int eventlen; //（2字节+len）定时器事件长度
-    char *event; //事件内容
-}TimerParam_T;
 
 
-typedef struct _VariableParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int vartype; //（1字节）变量类型
-    int val; //（4字节）
-    int len; //（2字节）
-    char *text;
-}VariableParam_T;
+/******************************************************************************
+*	Variables
+******************************************************************************/
+//local variables
 
-typedef struct _PicParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int picIndex; //（2字节）   图片索引
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}PicParam_T;
+//extern variables
 
-typedef struct _CPicParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int picIndex; //（2字节）   图片索引
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}CPicParam_T;
+/******************************************************************************
+*	Functions Prototypes
+******************************************************************************/
+//local Functions Prototypes
+int page_proc(char *str,int num,void *data);
+int clean_proc(char *str,int num,void *data);
+int point_proc(char *str,int num,void *data);
+int line_proc(char *str,int num,void *data);
+int rect_proc(char *str,int num,void *data);
+int frect_proc(char *str,int num,void *data);
 
-typedef struct _CNumParam_T{
-    int global;
-    char name[6];
-    int pageId;
-    int id;
-    int x;
-    int y;
-    int width;
-    int height;
-    int level; //控件所在层（1字节）：1or2  1在下 2在上
-    int distype; //按钮DisType（1字节）：（单色0 or 切图1 or 图片2)
-    int fpicorcol; //（2字节）
-    int bpicorcol; //（2字节）
-    int fontIndex; //（1字节）字体索引
-    int text; //（4字节）显示的数字
-    ENUM_ALIGNMODE align;//对齐方式 1字节
-    int downlen; //（2字节）
-    char *downcmd;
-    int uplen;//（2字节）
-    char *upcmd;
-}CNumParam_T;
+int pie_proc(char *str,int num,void *data);
+int arc_proc(char *str,int num,void *data);
+int cir_proc(char *str,int num,void *data);
+int fcir_proc(char *str,int num,void *data);
 
-typedef struct _PageInfo_T{
-    int index;
-    int addr;
-    int global;
-    int picornot;
-    int bcOrpi; //BackColorOrPicIndex
-    char objname[9];
-    int buttonNum;
-    ButtonParam_T *buttonInfo;
-    int labelNum;
-    LabelParam_T *labelInfo;
-    int pgbarNum;
-    PgbarParam_T *pgbarInfo;
-    int panelNum;
-    PanelParam_T *panelInfo;
-    int slideNum;
-    SlideParam_T *slideInfo;
-    int rolllabelNum;
-    RolllabelParam_T *rolllableInfo;
-    int graphNum;
-    GraphParam_T *graphInfo;
-    int radioNum;
-    RadioParam_T *radioInfo;
-    int checkboxNum;
-    CheckBoxParam_T *checkboxInfo;
-    int hotspotNum;
-    HotSpotParam_T *hotspotInfo;
-    int timerNum;
-    TimerParam_T *timerInfo;
-    int variableNum;
-    VariableParam_T *variableInfo;
-    int picNum;
-    PicParam_T *picInfo;
-    int cpicNum;
-    CPicParam_T *cpicInfo;
-    int numNum;
-    CNumParam_T *numInfo;
-}PageInfo_T;
-
-typedef struct _PageParam_T{
-    int pageNum;
-    PageInfo_T *page;
-}PageParam_T;
+int pic_proc(char *str,int num,void *data);
+int picc_proc(char *str,int num,void *data);
+int str_proc(char *str,int num,void *data);
+int ref_proc(char *str,int num,void *data);
+int click_proc(char *str,int num,void *data);
 
 
+int ecoh_proc(char *str,int num,void *data);
+int ecohn_proc(char *str,int num,void *data);
+int hide_proc(char *str,int num,void *data);
+int show_proc(char *str,int num,void *data);
+int re_proc(char *str,int num,void *data);
 
+
+int addn_proc(char *str,int num,void *data);
+
+
+int add_proc(char *str,int num,void *data);
+int del_proc(char *str,int num,void *data);
+int cal_proc(char *str,int num,void *data);
+int reset_proc(char *str,int num,void *data);
+int baud_proc(char *str,int num,void *data);
+int dim_proc(char *str,int num,void *data);
+int rand_proc(char *str,int num,void *data);
+int slen_proc(char *str,int num,void *data);
+int scopy_proc(char *str,int num,void *data);
+int sncopy_proc(char *str,int num,void *data);
+int sleep_proc(char *str,int num,void *data);
+
+serialParam_T serParam = {0};
+
+//extern Functions Prototypes
+stCMDPROCCB_S cmdProcTbl[]={
+    {1,"page",1,page_proc},
+    {2,"clean",1,clean_proc},
+    {3,"point",3,point_proc},
+    {4,"line",5,line_proc},
+    {5,"rect",5,rect_proc},
+    {6,"fillRect",5,frect_proc},
+
+    {7,"pie",6,pie_proc},
+    {8,"arc",7,arc_proc},
+    {9,"circle",4,cir_proc},
+    {10,"fillCircle",4,fcir_proc},
+    {11,"picture",3,pic_proc},
+    {12,"cutChart",5,picc_proc},
+
+    {13,"str",10,str_proc},
+    {14,"refresh",1,ref_proc},
+    {15,"click",2,click_proc},
+
+    {16,"echo",1,ecoh_proc},
+    {17,"echon",2,ecohn_proc},
+    {18,"hide",2,hide_proc},
+    {19,"show",2,show_proc},
+    {20,"re",1,re_proc},
+    
+    {0x1000|21,"curveAddData",3,addn_proc},
+
+    {22,"curveAdd",3,add_proc},
+    {23,"curveDelete",2,del_proc},
+    {24,"calTouch",0,cal_proc},
+    {25,"reset",0,reset_proc},
+    {26,"baudRate",1,baud_proc},
+    {27,"lightAdjust",1,dim_proc},
+    {28,"rand",1,rand_proc},
+    {29,"strLen",2,slen_proc},
+    {30,"strCopy",2,scopy_proc},
+    {31,"numCopy",3,sncopy_proc},
+    {32,"sleep",1,sleep_proc},
+    
+    {-1,NULL,1,NULL},
+};
+/******************************************************************************
+*	Functions
+******************************************************************************/
 int btos(char *buf)
 {
     int value = 0;
@@ -423,8 +166,6 @@ int btos(char *buf)
 
     return value;
 }
-
-
 
 int ButtonAnalysis(int fd,int num,ButtonParam_T **info)
 {
@@ -787,7 +528,7 @@ int RollLabelAnalysis(int fd,int num,RolllabelParam_T **info)
             info[j]->period = (0x0000FF00 & (buf[28] << 8)) | (0x000000FF & buf[27]);
             info[j]->fontIndex = buf[29];
             info[j]->enable = buf[30];
-            info[j]->align =(ENUM_ALIGNMODE) buf[31];
+            info[j]->align = (ENUM_ALIGNMODE)buf[31];
             info[j]->txtSpace = buf[32];
             info[j]->txtlen = (0x0000FF00 & (buf[34] << 8)) | (0x000000FF & buf[33]);
             if(info[j]->txtlen > 0)
@@ -1273,16 +1014,549 @@ int CNumAnalysis(int fd,int num,CNumParam_T **info)
     return 1;
 }
 
+void SerialUtils::widget_proc(char *cmd,char *str,int num,void *data)
+{
 
-int analysisBin()
+    int ret=-1;
+    if(strcmp(cmd,"page")==0){
+
+        pageData_S param = {0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.id));
+
+
+
+    }
+
+}
+//ҳ��
+int page_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pageData_S param = {0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.id));
+    //printf("[%s:%d]:%d :%d\r\n",__FUNCTION__,__LINE__,ret,(param.id));
+
+
+    return ret;
+}
+
+int clean_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    cleanData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.color));
+    printf("[%s:%d]:%d :%d\r\n",__FUNCTION__,__LINE__,ret,(param.color));
+    return ret;
+}
+
+int point_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pointData_S param = {0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.color));
+    printf("[%s:%d]:%d :%d %d %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.color));
+    return ret;
+}
+
+int line_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    lineData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x1),&(param.y1),&(param.x2),&(param.y2),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x1),(param.y1),(param.x2),(param.y2),(param.color));
+    return ret;
+}
+
+int rect_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    rectData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.color));
+    return ret;
+}
+
+int frect_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    frectData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d ,%d) %d\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.color));
+    return ret;
+}
+
+int pie_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    pieData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d ,%d:%d ,%d ,%d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.a0),(param.a1),(param.color));
+    return ret;
+}
+
+int arc_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    arcData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.pensize),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d ,%d:%d ,%d ,%d,%d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.a0),(param.a1),(param.pensize),(param.color));
+    return ret;
+}
+
+int cir_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    cirData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d  %d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.color));
+    return ret;
+}
+
+int fcir_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    fcirData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+    printf("[%s:%d]:%d :(%d, %d :%d  %d)\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.radius),(param.color));
+    return ret;
+}
+
+int pic_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    picData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.id));
+    printf("[%s:%d]:%d :(%d, %d :%d )\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.id));
+    return ret;
+}
+
+int picc_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    piccData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.id));
+    printf("[%s:%d]:%d :(%d, %d %d, %d :%d )\r\n",__FUNCTION__,__LINE__,ret,(param.x),(param.y),(param.width),(param.hight),(param.id));
+    return ret;
+}
+
+int str_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    strData_S param={0};
+    memset(&param,0,sizeof(param));
+
+    ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%s",\
+               &(param.x),&(param.y),&(param.width),&(param.hight),\
+               &(param.fontindex),&(param.alignment),&(param.Usebackcolor),\
+               &(param.fcolor),&(param.bcolor),\
+               &(param.str));
+    printf("[%s:%d]:%d :%d,%d,%d,%d;%d,%d,%d;%d,%d;%s\r\n",__FUNCTION__,__LINE__,ret,\
+           (param.x),(param.y),(param.width),(param.hight),\
+           (param.fontindex),(param.alignment),(param.Usebackcolor),\
+           (param.fcolor),(param.bcolor),\
+           (param.str));
+    return ret;
+}
+
+int ref_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    refData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%s",&(param.name));
+    printf("[%s:%d]:%d :%s\r\n",__FUNCTION__,__LINE__,ret,(param.name));
+    return ret;
+}
+
+int click_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    clickData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.event));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.event));
+    return ret;
+}
+
+int ecoh_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    ecohData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.name));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.name) );
+    return ret;
+}
+
+int ecohn_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    ecohnData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d,%d",&(param.name),&(param.n));
+    printf("[%s:%d]:%d :(%d ,%d )\r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.n) );
+    return ret;
+}
+
+int hide_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    hideData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.state));
+    return ret;
+}
+
+int show_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    showData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.state));
+    return ret;
+}
+
+int re_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    reData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.en));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.en));
+    return ret;
+}
+
+int addn_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    addnData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.num));
+    printf("[%s:%d]:%d :%s %d %d\r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel),(param.num));
+
+    return ret;
+}
+
+int add_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    addData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.data));
+    printf("[%s:%d]:%d :%s %d %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel),(param.data));
+    return ret;
+}
+
+int del_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    delData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.channel));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.channel));
+    return ret;
+}
+
+int cal_proc(char *str,int num,void *data)
+{
+    return 0;
+}
+
+int reset_proc(char *str,int num,void *data)
+{
+    return 0;
+}
+
+int baud_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    baudData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.baud));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.baud));
+    return ret;
+}
+
+int dim_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    dimData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.val)  );
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.val) );
+    return ret;
+}
+
+int rand_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    randData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.val));
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.val));
+    return ret;
+}
+
+int slen_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    slenData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%d",&(param.name),&(param.val));
+    printf("[%s:%d]:%d :%s %d \r\n",__FUNCTION__,__LINE__,ret,(param.name),(param.val));
+    return ret;
+}
+
+int scopy_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    scopyData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%[^,]",&(param.dst),&(param.src));
+    printf("[%s:%d]:%d :%s %s  \r\n",__FUNCTION__,__LINE__,ret,(param.dst),(param.src));
+    return ret;
+}
+
+int sncopy_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    sncopyData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%[^,],%[^,],%d",&(param.dst),&(param.src),&(param.num));
+    printf("[%s:%d]:%d :%s %s %d \r\n",__FUNCTION__,__LINE__,ret,(param.dst),(param.src),(param.num));
+    return ret;
+}
+
+int sleep_proc(char *str,int num,void *data)
+{
+    int ret=-1;
+    sleepData_S param={0};
+    memset(&param,0,sizeof(param));
+    ret=sscanf(str,"%d",&(param.state)  );
+    printf("[%s:%d]:%d :(%d )\r\n",__FUNCTION__,__LINE__,ret,(param.state) );
+    return ret;
+}
+
+int SerialUtils::cmdproc(char *str)
+{
+    int i;
+    char cmdstr[64]={0};
+    int ret=-1;
+    char *pParam=NULL;
+
+    memset(cmdstr,0x0,sizeof(cmdstr));
+    ret=sscanf(str,"%s ",&cmdstr);
+    printf("[%s:%d]:cmdstr=%s,ret = %d,len=%d\r\n",__FUNCTION__,__LINE__,cmdstr,ret,strlen(cmdstr));
+    if(ret == 1)
+    {
+        for(i=0;i<sizeof(cmdProcTbl)/sizeof(cmdProcTbl[0]);i++)
+        {
+            if(cmdProcTbl[i].cmdid>0)
+            {
+                if(!strcmp(cmdProcTbl[i].cmd,cmdstr))
+                {
+
+                   // printf("[%s:%d]:pParam=%s!cmd = %s,cmdproc = %p\r\n",__FUNCTION__,__LINE__,pParam,cmdProcTbl[i].cmd,cmdProcTbl[i].cmdproc);
+                    qDebug()<<"cmd:"<<cmdProcTbl[i].cmd;
+
+                    pParam=str+strlen(cmdProcTbl[i].cmd)+1;
+                    //ret=cmdProcTbl[i].cmdproc(pParam,cmdProcTbl[i].num,NULL);
+                    widget_proc(cmdProcTbl[i].cmd,pParam,cmdProcTbl[i].num,NULL);
+                    break;
+                }
+            }
+        }
+    }
+
+    return ret;
+}	
+
+static int findHead(char *str,int *len)
+{
+    int i = 0;
+    int buflen = *len;
+    char buf[128];
+
+    memset(buf,0,sizeof(buf));
+    memcpy(buf,str,buflen);
+    for(i= 0;i < buflen;i++)
+    {
+        if(buf[i] == 0x01 || buf[i] == 0x02)
+        {
+            memcpy(str,buf+i+1,buflen); //ȥ��ͷ
+            *len = buflen - (i + 1);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static int findTrail(char *str,int len,int *posit)
+{
+    int i = 0;
+
+    for(i= 0;i < len;i++)
+    {
+        if(str[i] == 0x0b)
+        {
+            *posit = i;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+
+
+SerialUtils::SerialUtils(QObject *parent) : QObject(parent)
+{
+
+}
+
+int SerialUtils::ParseSerialInt()
+{
+    memset(&serParam,0,sizeof(serialParam_T));
+    memset(serParam.buf,0,sizeof(serParam.buf));
+    return 0;
+}
+
+int ParseSerialSend(char *s_buf,int len)
+{
+    //tty_send(s_buf,len);
+    return 0;
+}
+
+
+#include <utils/resourcesmanager.h>
+#include <mywidget/mybutton.h>
+#include <mywidget/mygraph.h>
+#include <mywidget/mylabel.h>
+#include <mywidget/mypage.h>
+#include <mywidget/myprogressbar.h>
+#include <mywidget/myradio.h>
+#include <mywidget/myrolllabel.h>
+#include <mywidget/mysilder.h>
+#include "util.h"
+#include <QFile>
+
+int SerialUtils::ParseSerialComm(char *str,int len)
+{
+    int ret = -1;
+    int endPosit = 0;
+    char sendbuf[512];
+    int sendlen;
+
+    if(serParam.headflag == 0 && serParam.loadflag == 0) //��������ģʽ
+    {
+        if(findHead(str,&len) == 1) //find head
+        {
+            serParam.headflag = 1;
+            qDebug()<<"find head";
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    else if(serParam.loadflag == 1)
+    {
+        if(str[0] == 0x80) //80 EF CD 20 1C
+        {
+            int binlen;
+            int speed;
+
+            binlen = btos(str + 1);
+            speed = btos(str + 5);
+
+            //printf("[%s:%d]:binlen:0x%x,speed:0x%x!!!",__FUNCTION__,__LINE__,binlen,speed);
+
+            qDebug()<<"111";
+            memset(sendbuf,0,sizeof(sendbuf));
+            sendbuf[0] = 0x81;
+            sendlen = 1;
+            ParseSerialSend(sendbuf,sendlen);
+        }
+    }
+
+
+    if(len > 0)
+    {
+        if(findTrail(str,len,&endPosit) == 1) //find trail
+        {
+            qDebug()<<"find trail";
+            serParam.trailflag = 1;
+            memcpy(serParam.buf+serParam.posit,str,endPosit);//0xb ������������
+            serParam.posit += endPosit;
+            //printf("[%s:%d]:serParam.buf:%s!!!\n",__FUNCTION__,__LINE__,serParam.buf);
+            if(!strcmp("load",serParam.buf)) //02 6C 6F 61 64 0B
+            {
+                qDebug()<<("start to load data!!!!\n");
+                memset(sendbuf,0,sizeof(sendbuf));
+                sprintf(sendbuf,"%s,%s,%s,%s,%s","t1","320*480","h1","f030","64");
+                sendlen = strlen(sendbuf);
+                ParseSerialSend(sendbuf,sendlen);
+                ParseSerialSend("rst",3);
+                serParam.loadflag = 1;
+            }
+            else
+            {
+                cmdproc(serParam.buf);
+                memset(&serParam,0,sizeof(serialParam_T));
+                memset(serParam.buf,0,sizeof(serParam.buf));
+                if(len - (endPosit + 1) > 0) //0xb ������Ҫ��ȥ
+                {
+                    memcpy(serParam.buf+serParam.posit,str+endPosit,len - endPosit);
+                    ParseSerialComm(serParam.buf,len-endPosit);
+                }
+            }
+        }
+        else
+        {
+            memcpy(serParam.buf+serParam.posit,str,len);
+            serParam.posit += len;
+        }
+    }
+
+    return 0;
+}
+
+int SerialUtils::analysisBin()
 {
     int fd = 0;
-    fd = open("./LKdata.bin", O_RDWR);
+    fd = open("H:/dmjProgram/qtPro/LKdata.bin", O_RDWR); //���ڽ���bin�ļ���һ���̶���λ�û���SD���������̶�·��
 
+    QFile file("H:/dmjProgram/qtPro/LKdata.bin");
+
+    if(!file.open(QIODevice::ReadOnly)){
+
+        qDebug()<<"bin�ļ���ʧ��";
+        return 0;
+    }
+
+
+    qDebug()<<"fd:"<<fd;
     ImageParam_T imageInfo = {0};
     FontParam_T fontInfo = {0};
     PageParam_T pageInfo = {0};
-    int direction; //方向,最开始四个字节
+    int direction; //����,�ʼ�ĸ��ֽ�
     char buf[512] = {0};
     int i = 0,j = 0;
 
@@ -1291,82 +1565,109 @@ int analysisBin()
     memset(&pageInfo,0,sizeof(PageParam_T));
 
     memset(buf,0,sizeof(buf));
-    read(fd, buf, 16); // 01 00 00 00
+
+    int ret = file.read(buf, 16);
     direction = btos(buf);
     imageInfo.imageNum = btos(buf+4);
     fontInfo.fontNum = btos(buf+8);
     pageInfo.pageNum = btos(buf+12);
-    printf("[%s:%d]:direction:%d,imageNum:%d,fontNum:%d,pageNum:%d\n",__FUNCTION__,__LINE__,direction,imageInfo.imageNum,fontInfo.fontNum,pageInfo.pageNum);
+    //printf("[%s:%d]:direction:%d,imageNum:%d,fontNum:%d,pageNum:%d\n",__FUNCTION__,__LINE__,direction,imageInfo.imageNum,fontInfo.fontNum,pageInfo.pageNum);
 
-    imageInfo.image = (ImageInfo_T *)malloc(sizeof(ImageInfo_T) * imageInfo.imageNum);
-    memset(buf,0,sizeof(buf));
-    read(fd,buf,4*imageInfo.imageNum); //图片地址
-    for(i = 0;i < imageInfo.imageNum;i++)
+
+    ResourcesManager *resourcesManager = ResourcesManager::getInstance();
+    if(imageInfo.imageNum > 0)
     {
-        imageInfo.image[i].addr = btos(buf+4*i);
-        imageInfo.image[i].index = i;
-        printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
+        imageInfo.image = (ImageInfo_T *)malloc(sizeof(ImageInfo_T) * imageInfo.imageNum);
+        memset(buf,0,sizeof(buf));
+        file.read(buf,4*imageInfo.imageNum); //ͼƬ��ַ
+        for(i = 0;i < imageInfo.imageNum;i++)
+        {
+            imageInfo.image[i].addr = btos(buf+4*i);
+            imageInfo.image[i].index = i;
+            printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
+        }
     }
 
-    fontInfo.font = (FontInfo_T *)malloc(sizeof(FontInfo_T) * fontInfo.fontNum);
-    memset(buf,0,sizeof(buf));
-    read(fd,buf,4*fontInfo.fontNum); //字库地址
-    for(i = 0;i < fontInfo.fontNum;i++)
+    if(fontInfo.fontNum > 0)
     {
-        fontInfo.font[i].addr = btos(buf+4*i);
-        printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
+        fontInfo.font = (FontInfo_T *)malloc(sizeof(FontInfo_T) * fontInfo.fontNum);
+        memset(buf,0,sizeof(buf));
+        file.read(buf,4*fontInfo.fontNum); //�ֿ��ַ
+        for(i = 0;i < fontInfo.fontNum;i++)
+        {
+            fontInfo.font[i].addr = btos(buf+4*i);
+            printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
+        }
     }
 
-    pageInfo.page = (PageInfo_T *)malloc(sizeof(PageInfo_T)*pageInfo.pageNum);
-    memset(buf,0,sizeof(buf));
-    read(fd,buf,4*pageInfo.pageNum); //页面地址
-    for(i = 0;i < pageInfo.pageNum;i++)
+    if(pageInfo.pageNum > 0)
     {
-        pageInfo.page[i].addr = btos(buf+4*i);
-        pageInfo.page[i].index = i;
-        printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
+        pageInfo.page = (PageInfo_T *)malloc(sizeof(PageInfo_T)*pageInfo.pageNum);
+        memset(buf,0,sizeof(buf));
+        file.read(buf,4*pageInfo.pageNum); //ҳ���ַ
+        for(i = 0;i < pageInfo.pageNum;i++)
+        {
+            pageInfo.page[i].addr = btos(buf+4*i);
+            pageInfo.page[i].index = i;
+            printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
+
+
+            emit signal_addPage(pageInfo.page[i].index,"");
+        }
     }
 
-    //开始读取图片头数据(8位) + 图片数据
+    //��ʼ��ȡͼƬͷ����(8λ) + ͼƬ����
     for(i = 0;i < imageInfo.imageNum;i++)
     {
         memset(buf,0,sizeof(buf));
-        read(fd,buf,3);
+        file.read(buf,3);
         printf("[%s:%d]:buf:%s\n",__FUNCTION__,__LINE__,buf);
         if(!strcmp("BMP",buf))
         {
             memset(buf,0,sizeof(buf));
-            read(fd,buf,5);
+            file.read(buf,5);
             printf("[%s:%d]:buf:%d\n",__FUNCTION__,__LINE__,buf[0]);
-            //if(buf[0] == imageInfo.image[i].index) //实际bin文件中index值不对，都是0，可以不判断
+            //if(buf[0] == imageInfo.image[i].index) //ʵ��bin�ļ���indexֵ���ԣ�����0�����Բ��ж�
             {
                 imageInfo.image[i].width = (0x0000FF00 & (buf[2] << 8)) | (0x000000FF & buf[1]);
                 imageInfo.image[i].height = (0x0000FF00 & (buf[4] << 8)) | (0x000000FF & buf[3]);
                 printf("[%s:%d]:width:0x%x,height:0x%x\n",__FUNCTION__,__LINE__,imageInfo.image[i].width,imageInfo.image[i].height);
                 imageInfo.image[i].data = (char *)malloc(imageInfo.image[i].width * imageInfo.image[i].height*2);
-                read(fd,imageInfo.image[i].data,imageInfo.image[i].width * imageInfo.image[i].height*2);
+                file.read(imageInfo.image[i].data,imageInfo.image[i].width * imageInfo.image[i].height*2);
                 if(i == 0)
                 {
-                    FILE *file = NULL;
-                    file= fopen("./iamge0", "w+");
-                    fwrite(imageInfo.image[i].data,1,imageInfo.image[i].width * imageInfo.image[i].height*2,file);
-                    fclose(file);
+                    //					FILE *file = NULL;
+                    //					file= fopen("./iamge0", "w+");
+                    //					fwrite(imageInfo.image[i].data,1,imageInfo.image[i].width * imageInfo.image[i].height*2,file);
+                    //					fclose(file);
+
+
+                    resourcesManager->saveImage(
+                                imageInfo.image[i].index,
+                                imageInfo.image[i].width,
+                                imageInfo.image[i].height,
+                                0,
+                                imageInfo.image[i].data
+                                );
+                    //  emit signal_saveFontFile(imageInfo.image[i].index,imageInfo.image[i].width,imageInfo.image[i].height,0,imageInfo.image[i].data);
                 }
             }
         }
     }
 
-    //开始读取字体头数据(8位) + 字体数据
+    //��ʼ��ȡ����ͷ����(8λ) + ��������
+
+
     int fontsize = 0;
     for(i = 0;i < fontInfo.fontNum;i++)
     {
         memset(buf,0,sizeof(buf));
-        read(fd,buf,4);
+        file.read(buf,4);
         fontInfo.font[i].index = btos(buf);
         printf("[%s:%d]:font[%d].index:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].index);
 
         memset(buf,0,sizeof(buf));
-        read(fd,buf,4);
+        file.read(buf,4);
 
         fontInfo.font[i].width = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
         fontInfo.font[i].height = (0x0000FF00 & (buf[3] << 8)) | (0x000000FF & buf[2]);
@@ -1380,29 +1681,33 @@ int analysisBin()
             fontsize = pageInfo.page[0].addr - fontInfo.font[i].addr - 8;
         }
         fontInfo.font[i].data = (char *)malloc(sizeof(char) * fontsize);
-        read(fd,fontInfo.font[i].data,fontsize);
+        file.read(fontInfo.font[i].data,fontsize);
 
+        resourcesManager->saveFont(fontInfo.font[i].index,
+                                                  fontInfo.font[i].data,
+                                                  fontsize);
     }
 
 
-    //开始读取页面头数据(8位) + 页面数据
+    qDebug()<<"pageNum:"<<pageInfo.pageNum;
+    //��ʼ��ȡҳ��ͷ����(8λ) + ҳ������
     for(i = 0;i < pageInfo.pageNum;i++)
     {
         memset(pageInfo.page[i].objname,0,sizeof(pageInfo.page[i].objname));
-        read(fd,pageInfo.page[i].objname,9);
-        printf("[%s:%d]:objname:%s\n",__FUNCTION__,__LINE__,pageInfo.page[i].objname);
+        file.read(pageInfo.page[i].objname,9);
+       // qDebug<("[%s:%d]:objname:%s\n",__FUNCTION__,__LINE__,pageInfo.page[i].objname);
         memset(buf,0,sizeof(buf));
-        read(fd,buf,4);
+        file.read(buf,4);
         printf("[%s:%d]:buf:%s\n",__FUNCTION__,__LINE__,buf);
         if(!strcmp("PAGE",buf))
         {
             memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
+            file.read(buf,2);
             pageInfo.page[i].global = buf[0];
             pageInfo.page[i].picornot = buf[1];
             printf("[%s:%d]:page[%d]:global:%d,picornot:%d\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].global,pageInfo.page[i].picornot);
             memset(buf,0,sizeof(buf));
-            read(fd,buf,4);
+            file.read(buf,4);
             if(pageInfo.page[i].picornot == 0)
             {
                 pageInfo.page[i].bcOrpi = (0x0000FF00 & (buf[3] << 8)) | (0x000000FF & buf[2]);
@@ -1413,10 +1718,10 @@ int analysisBin()
             }
             printf("[%s:%d]:page[%d]:bcOrpi:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].bcOrpi);
             memset(buf,0,sizeof(buf));
-            read(fd,buf,8); //这8个字节不懂啥意思Before\After\TouchDown\TouchUp事件
+            file.read(buf,8); //��8���ֽڲ���ɶ��˼Before\After\TouchDown\TouchUp�¼�
 
             memset(buf,0,sizeof(buf));
-            read(fd,buf,60); //读取15种控件的数量
+            file.read(buf,60); //��ȡ15�ֿؼ�������
             pageInfo.page[i].buttonNum = btos(buf);
             pageInfo.page[i].labelNum = btos(buf+4);
             pageInfo.page[i].pgbarNum = btos(buf+8);
@@ -1434,32 +1739,57 @@ int analysisBin()
             pageInfo.page[i].numNum = btos(buf+56);
 
             printf("[%s:%d]:page[%d]:num:%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",__FUNCTION__,__LINE__,
-                                  i,pageInfo.page[i].buttonNum,pageInfo.page[i].labelNum,pageInfo.page[i].pgbarNum,pageInfo.page[i].panelNum,
-                                  pageInfo.page[i].slideNum,pageInfo.page[i].rolllabelNum,pageInfo.page[i].graphNum,pageInfo.page[i].radioNum,
-                                  pageInfo.page[i].checkboxNum,pageInfo.page[i].hotspotNum,pageInfo.page[i].timerNum,pageInfo.page[i].variableNum,
-                                  pageInfo.page[i].picNum,pageInfo.page[i].cpicNum,pageInfo.page[i].numNum);
+                   i,pageInfo.page[i].buttonNum,pageInfo.page[i].labelNum,pageInfo.page[i].pgbarNum,pageInfo.page[i].panelNum,
+                   pageInfo.page[i].slideNum,pageInfo.page[i].rolllabelNum,pageInfo.page[i].graphNum,pageInfo.page[i].radioNum,
+                   pageInfo.page[i].checkboxNum,pageInfo.page[i].hotspotNum,pageInfo.page[i].timerNum,pageInfo.page[i].variableNum,
+                   pageInfo.page[i].picNum,pageInfo.page[i].cpicNum,pageInfo.page[i].numNum);
 
             ButtonAnalysis(fd,pageInfo.page[i].buttonNum,&(pageInfo.page[i].buttonInfo));
+
+            qDebug()<<"buttonNum:"<<pageInfo.page[i].buttonNum;
+
             for(j = 0;j < pageInfo.page[i].buttonNum;j++)
             {
                 printf("[%s:%d]:page[%d].button[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].buttonInfo[j].global,pageInfo.page[i].buttonInfo[j].name,pageInfo.page[i].buttonInfo[j].pageId,
-                    pageInfo.page[i].buttonInfo[j].id,pageInfo.page[i].buttonInfo[j].x,pageInfo.page[i].buttonInfo[j].y,
-                    pageInfo.page[i].buttonInfo[j].width,pageInfo.page[i].buttonInfo[j].height,pageInfo.page[i].buttonInfo[j].level,
-                    pageInfo.page[i].buttonInfo[j].distype,pageInfo.page[i].buttonInfo[j].fpic,pageInfo.page[i].buttonInfo[j].bpic);
+                       pageInfo.page[i].buttonInfo[j].global,pageInfo.page[i].buttonInfo[j].name,pageInfo.page[i].buttonInfo[j].pageId,
+                       pageInfo.page[i].buttonInfo[j].id,pageInfo.page[i].buttonInfo[j].x,pageInfo.page[i].buttonInfo[j].y,
+                       pageInfo.page[i].buttonInfo[j].width,pageInfo.page[i].buttonInfo[j].height,pageInfo.page[i].buttonInfo[j].level,
+                       pageInfo.page[i].buttonInfo[j].distype,pageInfo.page[i].buttonInfo[j].fpic,pageInfo.page[i].buttonInfo[j].bpic);
                 printf(" txtlen:%d,txt:%s,fontIndex;%d,txtColor:%d \n swType:%d,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].buttonInfo[j].txtlen,pageInfo.page[i].buttonInfo[j].txt,pageInfo.page[i].buttonInfo[j].fontIndex,
-                    pageInfo.page[i].buttonInfo[j].txtColor,pageInfo.page[i].buttonInfo[j].swType,pageInfo.page[i].buttonInfo[j].downlen,
-                    pageInfo.page[i].buttonInfo[j].uplen);
+                       pageInfo.page[i].buttonInfo[j].txtlen,pageInfo.page[i].buttonInfo[j].txt,pageInfo.page[i].buttonInfo[j].fontIndex,
+                       pageInfo.page[i].buttonInfo[j].txtColor,pageInfo.page[i].buttonInfo[j].swType,pageInfo.page[i].buttonInfo[j].downlen,
+                       pageInfo.page[i].buttonInfo[j].uplen);
                 printf("***********************************\n\n\n");
+
+                MyButton *mbtn = new MyButton(pageInfo.page[i].buttonInfo[j].id,pageInfo.page[i].buttonInfo[j].name);
+                mbtn->setText(pageInfo.page[i].buttonInfo[j].txt);
+
+                if(pageInfo.page[i].buttonInfo[j].distype == 0){
+
+
+                }else{
+
+                }
+
+                if(pageInfo.page[i].buttonInfo[j].level>1)
+                    mbtn->raise();
+
+                emit signal_addMWidget(i,
+                                       mbtn,
+                                       pageInfo.page[i].buttonInfo[j].x,
+                                       pageInfo.page[i].buttonInfo[j].y,
+                                       pageInfo.page[i].buttonInfo[j].width,
+                                       pageInfo.page[i].buttonInfo[j].height);
+
             }
             //printf("[%s:%d]:page[%d].labelinfo:[%d]\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].labelInfo[0].global);
             LabelAnalysis(fd,pageInfo.page[i].labelNum,&(pageInfo.page[i].labelInfo));
+            qDebug()<<"labelNum:"<<pageInfo.page[i].labelNum;
             for(j = 0;j < pageInfo.page[i].labelNum;j++)
             {
-                printf("[%s:%d]:page[%d].label[%d]info:\n",__FUNCTION__,__LINE__,i,j);
+                /*printf("[%s:%d]:page[%d].label[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpicorcol:0x%x,bpicorcol:0x%x \n",
                     pageInfo.page[i].labelInfo[j].global,pageInfo.page[i].labelInfo[j].name,pageInfo.page[i].labelInfo[j].pageId,
@@ -1470,13 +1800,22 @@ int analysisBin()
                     pageInfo.page[i].labelInfo[j].txtlen,pageInfo.page[i].labelInfo[j].txt,pageInfo.page[i].labelInfo[j].fontIndex,
                     pageInfo.page[i].labelInfo[j].txtSpace,pageInfo.page[i].labelInfo[j].align,pageInfo.page[i].labelInfo[j].downlen,
                     pageInfo.page[i].labelInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                printf("***********************************\n\n\n");*/
+
+                MyLabel *mlable = new MyLabel(pageInfo.page[i].labelInfo[j].id,pageInfo.page[i].labelInfo[j].name);
+                emit signal_addMWidget(i,
+                                       mlable,
+                                       pageInfo.page[i].labelInfo[j].x,
+                                       pageInfo.page[i].labelInfo[j].y,
+                                       pageInfo.page[i].labelInfo[j].width,
+                                       pageInfo.page[i].labelInfo[j].height);
             }
 
             ProgressBarAnalysis(fd,pageInfo.page[i].pgbarNum,&(pageInfo.page[i].pgbarInfo));
+            qDebug()<<"pgbarNum:"<<pageInfo.page[i].pgbarNum;
             for(j = 0;j < pageInfo.page[i].pgbarNum;j++)
             {
-                printf("[%s:%d]:page[%d].pgbar[%d]info:\n",__FUNCTION__,__LINE__,i,j);
+                /*printf("[%s:%d]:page[%d].pgbar[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
                     pageInfo.page[i].pgbarInfo[j].global,pageInfo.page[i].pgbarInfo[j].name,pageInfo.page[i].pgbarInfo[j].pageId,
@@ -1486,13 +1825,41 @@ int analysisBin()
                 printf(" hov:%d,percent:%d,downlen:%d,uplen:%d \n",
                     pageInfo.page[i].pgbarInfo[j].hov,pageInfo.page[i].pgbarInfo[j].percent,pageInfo.page[i].pgbarInfo[j].downlen,
                     pageInfo.page[i].pgbarInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                printf("***********************************\n\n\n");*/
+
+
+                MyProgressbar *processbar = new MyProgressbar(pageInfo.page[i].pgbarInfo[j].id,pageInfo.page[i].pgbarInfo[j].name);
+
+
+                processbar->setValue(pageInfo.page[i].pgbarInfo[j].percent);
+                processbar->hov = pageInfo.page[i].pgbarInfo[j].hov;
+                processbar->radius = 5;
+                if(pageInfo.page[i].pgbarInfo[j].distype == 0){
+                    processbar->isuseimg = false;
+                    processbar->setBackgroudColor(parse565(pageInfo.page[i].pgbarInfo[j].bpic));
+                    processbar->setForegroundColor(parse565(pageInfo.page[i].pgbarInfo[j].fpic));
+                }else{
+                    processbar->isuseimg = true;
+
+                    QString bgimg = resourcesManager->getImageAbsolutePath(pageInfo.page[i].pgbarInfo[j].bpic);
+                    QString fgimg = resourcesManager->getImageAbsolutePath(pageInfo.page[i].pgbarInfo[j].fpic);
+                    processbar->setBackgroudImg(bgimg);
+                    processbar->setForegroundImg(fgimg);
+                }
+
+
+                processbar->updateStyle();
+
+                emit signal_addMWidget(i,processbar,pageInfo.page[i].pgbarInfo[j].x,pageInfo.page[i].pgbarInfo[j].y,
+                                       pageInfo.page[i].pgbarInfo[j].width,pageInfo.page[i].pgbarInfo[j].height);
+
             }
 
             PanelAnalysis(fd,pageInfo.page[i].panelNum,&(pageInfo.page[i].panelInfo));
+            qDebug()<<"panelNum:"<<pageInfo.page[i].panelNum;
             for(j = 0;j < pageInfo.page[i].panelNum;j++)
             {
-                printf("[%s:%d]:page[%d].panel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
+                /*printf("[%s:%d]:page[%d].panel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
                     pageInfo.page[i].panelInfo[j].global,pageInfo.page[i].panelInfo[j].name,pageInfo.page[i].panelInfo[j].pageId,
@@ -1502,13 +1869,16 @@ int analysisBin()
                 printf(" linewidth:%d,angle:%d,downlen:%d,uplen:%d \n",
                     pageInfo.page[i].panelInfo[j].linewidth,pageInfo.page[i].panelInfo[j].angle,pageInfo.page[i].panelInfo[j].downlen,
                     pageInfo.page[i].panelInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                printf("***********************************\n\n\n");*/
+
+
             }
 
             SliderAnalysis(fd,pageInfo.page[i].slideNum,&(pageInfo.page[i].slideInfo));
+              qDebug()<<"slideNum:"<<pageInfo.page[i].slideNum;
             for(j = 0;j < pageInfo.page[i].slideNum;j++)
             {
-                printf("[%s:%d]:page[%d].slide[%d]info:\n",__FUNCTION__,__LINE__,i,j);
+                /*printf("[%s:%d]:page[%d].slide[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
                     pageInfo.page[i].slideInfo[j].global,pageInfo.page[i].slideInfo[j].name,pageInfo.page[i].slideInfo[j].pageId,
@@ -1519,159 +1889,216 @@ int analysisBin()
                     pageInfo.page[i].slideInfo[j].hov,pageInfo.page[i].slideInfo[j].min,pageInfo.page[i].slideInfo[j].max,
                     pageInfo.page[i].slideInfo[j].value,pageInfo.page[i].slideInfo[j].wid,pageInfo.page[i].slideInfo[j].hgt,
                     pageInfo.page[i].slideInfo[j].downlen,pageInfo.page[i].slideInfo[j].uplen,pageInfo.page[i].slideInfo[j].mvlen);
-                printf("***********************************\n\n\n");
+                printf("***********************************\n\n\n");*/
+
+
+                MySilder *silder = new MySilder(pageInfo.page[i].slideInfo[j].id,pageInfo.page[i].slideInfo[j].name);
+
+                silder->foregroud_color= QColor("#ff0000");
+                silder->backgroud_color = QColor("#00ff00");
+                silder->hander_color = QColor("#0000ff");
+                silder->hov = pageInfo.page[i].slideInfo[j].hov;
+                silder->radius = 4;
+                silder->silderw = pageInfo.page[i].slideInfo[j].wid;
+                silder->silderh = pageInfo.page[i].slideInfo[j].hgt;
+                silder->setValue(pageInfo.page[i].slideInfo[j].value);
+                silder->setMinimum(pageInfo.page[i].slideInfo[j].min);
+                silder->setMaximum(pageInfo.page[i].slideInfo[j].max);
+                if(pageInfo.page[i].slideInfo[j].distype == 0){
+
+                    silder->foregroud_color = parse565(pageInfo.page[i].slideInfo[j].bpicorcol);
+                    silder->backgroud_color = parse565(pageInfo.page[i].slideInfo[j].bpicorcol);
+                    silder->hander_color = parse565(pageInfo.page[i].slideInfo[j].fpicorcol);
+
+                }else{
+                    silder->isuseimg = true;
+                    silder->foregroud_img = resourcesManager->getImageAbsolutePath(pageInfo.page[i].slideInfo[j].fpicorcol);
+                    silder->backgroud_img = resourcesManager->getImageAbsolutePath(pageInfo.page[i].slideInfo[j].bpicorcol);
+                }
+
+                //silder->setOrientation(Qt::Horizontal);
+
+                emit signal_addMWidget(i,silder,pageInfo.page[i].slideInfo[j].x,pageInfo.page[i].slideInfo[j].y,
+                                       pageInfo.page[i].slideInfo[j].width,pageInfo.page[i].slideInfo[j].height);
+                silder->updateStyle();
+
             }
 
             RollLabelAnalysis(fd,pageInfo.page[i].rolllabelNum,&(pageInfo.page[i].rolllableInfo));
+             qDebug()<<"rolllableInfo:"<<pageInfo.page[i].rolllableInfo;
             for(j = 0;j < pageInfo.page[i].rolllabelNum;j++)
             {
-                printf("[%s:%d]:page[%d].rolllabel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
+                /*printf("[%s:%d]:page[%d].rolllabel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].rolllableInfo[j].global,pageInfo.page[i].rolllableInfo[j].name,pageInfo.page[i].rolllableInfo[j].pageId,
-                    pageInfo.page[i].rolllableInfo[j].id,pageInfo.page[i].rolllableInfo[j].x,pageInfo.page[i].rolllableInfo[j].y,
-                    pageInfo.page[i].rolllableInfo[j].width,pageInfo.page[i].rolllableInfo[j].height,pageInfo.page[i].rolllableInfo[j].level,
-                    pageInfo.page[i].rolllableInfo[j].distype,pageInfo.page[i].rolllableInfo[j].fpicorcol,pageInfo.page[i].rolllableInfo[j].bpicorcol);
+                       pageInfo.page[i].rolllableInfo[j].global,pageInfo.page[i].rolllableInfo[j].name,pageInfo.page[i].rolllableInfo[j].pageId,
+                       pageInfo.page[i].rolllableInfo[j].id,pageInfo.page[i].rolllableInfo[j].x,pageInfo.page[i].rolllableInfo[j].y,
+                       pageInfo.page[i].rolllableInfo[j].width,pageInfo.page[i].rolllableInfo[j].height,pageInfo.page[i].rolllableInfo[j].level,
+                       pageInfo.page[i].rolllableInfo[j].distype,pageInfo.page[i].rolllableInfo[j].fpicorcol,pageInfo.page[i].rolllableInfo[j].bpicorcol);
                 printf(" dir:%d,step:%d,period:%d,fontIndex:%d,enable:%d,txtSpace:%d,align:%d,txtlen:%d,txt:%s,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].rolllableInfo[j].dir,pageInfo.page[i].rolllableInfo[j].step,pageInfo.page[i].rolllableInfo[j].period,
-                    pageInfo.page[i].rolllableInfo[j].fontIndex,pageInfo.page[i].rolllableInfo[j].enable,pageInfo.page[i].rolllableInfo[j].txtSpace,
-                    pageInfo.page[i].rolllableInfo[j].align,pageInfo.page[i].rolllableInfo[j].txtlen,pageInfo.page[i].rolllableInfo[j].txt,
-                    pageInfo.page[i].rolllableInfo[j].downlen,pageInfo.page[i].rolllableInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                       pageInfo.page[i].rolllableInfo[j].dir,pageInfo.page[i].rolllableInfo[j].step,pageInfo.page[i].rolllableInfo[j].period,
+                       pageInfo.page[i].rolllableInfo[j].fontIndex,pageInfo.page[i].rolllableInfo[j].enable,pageInfo.page[i].rolllableInfo[j].txtSpace,
+                       pageInfo.page[i].rolllableInfo[j].align,pageInfo.page[i].rolllableInfo[j].txtlen,pageInfo.page[i].rolllableInfo[j].txt,
+                       pageInfo.page[i].rolllableInfo[j].downlen,pageInfo.page[i].rolllableInfo[j].uplen);
+                printf("***********************************\n\n\n");*/
+
+
+
+                /*MyRollLabel *mrolllable = new MyRollLabel(1,"222");
+                QFont font("16",10);
+                font.setWordSpacing(100);//�ּ��
+                mrolllable->setFont(font,QColor(255,0,0));
+                mrolllable->setLineWidth(5);
+
+
+
+                addMWidget(mrolllable,200,200,100,100);
+
+                mrolllable->setBackgroudImg("H:/dmjProgram/qtPro/SerialScreen/res/1111111.png");
+                mrolllable->setBackgroudColor(QColor(255,255,255));*/
             }
 
             GraphAnalysis(fd,pageInfo.page[i].graphNum,&(pageInfo.page[i].graphInfo));
+            qDebug()<<"graphNum:"<<pageInfo.page[i].graphNum;
             for(j = 0;j < pageInfo.page[i].graphNum;j++)
             {
                 printf("[%s:%d]:page[%d].graph[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,lor:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].graphInfo[j].global,pageInfo.page[i].graphInfo[j].name,pageInfo.page[i].graphInfo[j].pageId,
-                    pageInfo.page[i].graphInfo[j].id,pageInfo.page[i].graphInfo[j].x,pageInfo.page[i].graphInfo[j].y,
-                    pageInfo.page[i].graphInfo[j].width,pageInfo.page[i].graphInfo[j].height,pageInfo.page[i].graphInfo[j].level,
-                    pageInfo.page[i].graphInfo[j].distype,pageInfo.page[i].graphInfo[j].lor,pageInfo.page[i].graphInfo[j].bpicorcol);
+                       pageInfo.page[i].graphInfo[j].global,pageInfo.page[i].graphInfo[j].name,pageInfo.page[i].graphInfo[j].pageId,
+                       pageInfo.page[i].graphInfo[j].id,pageInfo.page[i].graphInfo[j].x,pageInfo.page[i].graphInfo[j].y,
+                       pageInfo.page[i].graphInfo[j].width,pageInfo.page[i].graphInfo[j].height,pageInfo.page[i].graphInfo[j].level,
+                       pageInfo.page[i].graphInfo[j].distype,pageInfo.page[i].graphInfo[j].lor,pageInfo.page[i].graphInfo[j].bpicorcol);
                 printf(" gridcolor:0x%x,winterval:0x%x,hinterval:0x%x,channel:0x%x,channelcolor0:0x%x,channelcolor1:0x%x,channelcolor2:0x%x,channelcolor3:0x%x,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].graphInfo[j].gridcolor,pageInfo.page[i].graphInfo[j].winterval,pageInfo.page[i].graphInfo[j].hinterval,
-                    pageInfo.page[i].graphInfo[j].channel,pageInfo.page[i].graphInfo[j].channelcolor0,pageInfo.page[i].graphInfo[j].channelcolor1,
-                    pageInfo.page[i].graphInfo[j].channelcolor2,pageInfo.page[i].graphInfo[j].channelcolor3,
-                    pageInfo.page[i].graphInfo[j].downlen,pageInfo.page[i].graphInfo[j].uplen);
+                       pageInfo.page[i].graphInfo[j].gridcolor,pageInfo.page[i].graphInfo[j].winterval,pageInfo.page[i].graphInfo[j].hinterval,
+                       pageInfo.page[i].graphInfo[j].channel,pageInfo.page[i].graphInfo[j].channelcolor0,pageInfo.page[i].graphInfo[j].channelcolor1,
+                       pageInfo.page[i].graphInfo[j].channelcolor2,pageInfo.page[i].graphInfo[j].channelcolor3,
+                       pageInfo.page[i].graphInfo[j].downlen,pageInfo.page[i].graphInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
             RadioAnalysis(fd,pageInfo.page[i].radioNum,&(pageInfo.page[i].radioInfo));
+            qDebug()<<"radioNum:"<<pageInfo.page[i].radioNum;
             for(j = 0;j < pageInfo.page[i].radioNum;j++)
             {
                 printf("[%s:%d]:page[%d].radio[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].radioInfo[j].global,pageInfo.page[i].radioInfo[j].name,pageInfo.page[i].radioInfo[j].pageId,
-                    pageInfo.page[i].radioInfo[j].id,pageInfo.page[i].radioInfo[j].x,pageInfo.page[i].radioInfo[j].y,
-                    pageInfo.page[i].radioInfo[j].width,pageInfo.page[i].radioInfo[j].height,pageInfo.page[i].radioInfo[j].level,
-                    pageInfo.page[i].radioInfo[j].distype,pageInfo.page[i].radioInfo[j].fpicorcol,pageInfo.page[i].radioInfo[j].bpicorcol);
+                       pageInfo.page[i].radioInfo[j].global,pageInfo.page[i].radioInfo[j].name,pageInfo.page[i].radioInfo[j].pageId,
+                       pageInfo.page[i].radioInfo[j].id,pageInfo.page[i].radioInfo[j].x,pageInfo.page[i].radioInfo[j].y,
+                       pageInfo.page[i].radioInfo[j].width,pageInfo.page[i].radioInfo[j].height,pageInfo.page[i].radioInfo[j].level,
+                       pageInfo.page[i].radioInfo[j].distype,pageInfo.page[i].radioInfo[j].fpicorcol,pageInfo.page[i].radioInfo[j].bpicorcol);
                 printf(" horv:0x%x,focusindex:0x%x,numofitem:0x%x,distance:0x%x,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].radioInfo[j].horv,pageInfo.page[i].radioInfo[j].focusindex,pageInfo.page[i].radioInfo[j].numofitem,
-                    pageInfo.page[i].radioInfo[j].distance,pageInfo.page[i].radioInfo[j].downlen,pageInfo.page[i].radioInfo[j].uplen);
+                       pageInfo.page[i].radioInfo[j].horv,pageInfo.page[i].radioInfo[j].focusindex,pageInfo.page[i].radioInfo[j].numofitem,
+                       pageInfo.page[i].radioInfo[j].distance,pageInfo.page[i].radioInfo[j].downlen,pageInfo.page[i].radioInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
             CheckBoxAnalysis(fd,pageInfo.page[i].checkboxNum,&(pageInfo.page[i].checkboxInfo));
+            qDebug()<<"checkboxNum:"<<pageInfo.page[i].checkboxNum;
             for(j = 0;j < pageInfo.page[i].checkboxNum;j++)
             {
                 printf("[%s:%d]:page[%d].checkbox[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].checkboxInfo[j].global,pageInfo.page[i].checkboxInfo[j].name,pageInfo.page[i].checkboxInfo[j].pageId,
-                    pageInfo.page[i].checkboxInfo[j].id,pageInfo.page[i].checkboxInfo[j].x,pageInfo.page[i].checkboxInfo[j].y,
-                    pageInfo.page[i].checkboxInfo[j].width,pageInfo.page[i].checkboxInfo[j].height,pageInfo.page[i].checkboxInfo[j].level,
-                    pageInfo.page[i].checkboxInfo[j].distype,pageInfo.page[i].checkboxInfo[j].fpicorcol,pageInfo.page[i].checkboxInfo[j].bpicorcol);
+                       pageInfo.page[i].checkboxInfo[j].global,pageInfo.page[i].checkboxInfo[j].name,pageInfo.page[i].checkboxInfo[j].pageId,
+                       pageInfo.page[i].checkboxInfo[j].id,pageInfo.page[i].checkboxInfo[j].x,pageInfo.page[i].checkboxInfo[j].y,
+                       pageInfo.page[i].checkboxInfo[j].width,pageInfo.page[i].checkboxInfo[j].height,pageInfo.page[i].checkboxInfo[j].level,
+                       pageInfo.page[i].checkboxInfo[j].distype,pageInfo.page[i].checkboxInfo[j].fpicorcol,pageInfo.page[i].checkboxInfo[j].bpicorcol);
                 printf(" state:0x%x,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].checkboxInfo[j].state,pageInfo.page[i].checkboxInfo[j].downlen,pageInfo.page[i].checkboxInfo[j].uplen);
+                       pageInfo.page[i].checkboxInfo[j].state,pageInfo.page[i].checkboxInfo[j].downlen,pageInfo.page[i].checkboxInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
             HotSpotAnalysis(fd,pageInfo.page[i].hotspotNum,&(pageInfo.page[i].hotspotInfo));
+            qDebug()<<"hotspotNum:"<<pageInfo.page[i].hotspotNum;
             for(j = 0;j < pageInfo.page[i].hotspotNum;j++)
             {
                 printf("[%s:%d]:page[%d].hotspot[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                    pageInfo.page[i].hotspotInfo[j].global,pageInfo.page[i].hotspotInfo[j].name,pageInfo.page[i].hotspotInfo[j].pageId,
-                    pageInfo.page[i].hotspotInfo[j].id,pageInfo.page[i].hotspotInfo[j].x,pageInfo.page[i].hotspotInfo[j].y,
-                    pageInfo.page[i].hotspotInfo[j].width,pageInfo.page[i].hotspotInfo[j].height,pageInfo.page[i].hotspotInfo[j].level);
+                       pageInfo.page[i].hotspotInfo[j].global,pageInfo.page[i].hotspotInfo[j].name,pageInfo.page[i].hotspotInfo[j].pageId,
+                       pageInfo.page[i].hotspotInfo[j].id,pageInfo.page[i].hotspotInfo[j].x,pageInfo.page[i].hotspotInfo[j].y,
+                       pageInfo.page[i].hotspotInfo[j].width,pageInfo.page[i].hotspotInfo[j].height,pageInfo.page[i].hotspotInfo[j].level);
                 printf("downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].hotspotInfo[j].downlen,pageInfo.page[i].hotspotInfo[j].uplen);
+                       pageInfo.page[i].hotspotInfo[j].downlen,pageInfo.page[i].hotspotInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
 
             TimerAnalysis(fd,pageInfo.page[i].timerNum,&(pageInfo.page[i].timerInfo));
+            qDebug()<<"timerNum:"<<pageInfo.page[i].timerNum;
             for(j = 0;j < pageInfo.page[i].timerNum;j++)
             {
                 printf("[%s:%d]:page[%d].timer[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d,level:%d \n",
-                    pageInfo.page[i].timerInfo[j].global,pageInfo.page[i].timerInfo[j].name,pageInfo.page[i].timerInfo[j].pageId,
-                    pageInfo.page[i].timerInfo[j].id,pageInfo.page[i].timerInfo[j].level);
+                       pageInfo.page[i].timerInfo[j].global,pageInfo.page[i].timerInfo[j].name,pageInfo.page[i].timerInfo[j].pageId,
+                       pageInfo.page[i].timerInfo[j].id,pageInfo.page[i].timerInfo[j].level);
                 printf("period:0x%x,enable:%d,eventlen:0x%x,event:%s\n",
-                    pageInfo.page[i].timerInfo[j].period,pageInfo.page[i].timerInfo[j].enable,pageInfo.page[i].timerInfo[j].eventlen,
-                    pageInfo.page[i].timerInfo[j].event);
+                       pageInfo.page[i].timerInfo[j].period,pageInfo.page[i].timerInfo[j].enable,pageInfo.page[i].timerInfo[j].eventlen,
+                       pageInfo.page[i].timerInfo[j].event);
                 printf("***********************************\n\n\n");
             }
 
             VariableAnalysis(fd,pageInfo.page[i].variableNum,&(pageInfo.page[i].variableInfo));
+            qDebug()<<"variableNum:"<<pageInfo.page[i].variableNum;
             for(j = 0;j < pageInfo.page[i].variableNum;j++)
             {
                 printf("[%s:%d]:page[%d].variable[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d,level:%d \n",
-                    pageInfo.page[i].variableInfo[j].global,pageInfo.page[i].variableInfo[j].name,pageInfo.page[i].variableInfo[j].pageId,
-                    pageInfo.page[i].variableInfo[j].id,pageInfo.page[i].variableInfo[j].level);
+                       pageInfo.page[i].variableInfo[j].global,pageInfo.page[i].variableInfo[j].name,pageInfo.page[i].variableInfo[j].pageId,
+                       pageInfo.page[i].variableInfo[j].id,pageInfo.page[i].variableInfo[j].level);
                 printf("vartype:0x%x,val:0x%x,len:0x%x \n",
-                    pageInfo.page[i].variableInfo[j].vartype,pageInfo.page[i].variableInfo[j].val,pageInfo.page[i].variableInfo[j].len);
+                       pageInfo.page[i].variableInfo[j].vartype,pageInfo.page[i].variableInfo[j].val,pageInfo.page[i].variableInfo[j].len);
                 printf("***********************************\n\n\n");
             }
 
             PicAnalysis(fd,pageInfo.page[i].picNum,&(pageInfo.page[i].picInfo));
+            qDebug()<<"picNum:"<<pageInfo.page[i].picNum;
             for(j = 0;j < pageInfo.page[i].picNum;j++)
             {
                 printf("[%s:%d]:page[%d].pic[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                    pageInfo.page[i].picInfo[j].global,pageInfo.page[i].picInfo[j].name,pageInfo.page[i].picInfo[j].pageId,
-                    pageInfo.page[i].picInfo[j].id,pageInfo.page[i].picInfo[j].x,pageInfo.page[i].picInfo[j].y,
-                    pageInfo.page[i].picInfo[j].width,pageInfo.page[i].picInfo[j].height,pageInfo.page[i].picInfo[j].level);
+                       pageInfo.page[i].picInfo[j].global,pageInfo.page[i].picInfo[j].name,pageInfo.page[i].picInfo[j].pageId,
+                       pageInfo.page[i].picInfo[j].id,pageInfo.page[i].picInfo[j].x,pageInfo.page[i].picInfo[j].y,
+                       pageInfo.page[i].picInfo[j].width,pageInfo.page[i].picInfo[j].height,pageInfo.page[i].picInfo[j].level);
                 printf(" picIndex:0x%x,downlen:0x%x,uplen:0x%x \n",
-                    pageInfo.page[i].picInfo[j].picIndex,pageInfo.page[i].picInfo[j].downlen,pageInfo.page[i].picInfo[j].uplen);
+                       pageInfo.page[i].picInfo[j].picIndex,pageInfo.page[i].picInfo[j].downlen,pageInfo.page[i].picInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
             CPicAnalysis(fd,pageInfo.page[i].cpicNum,&(pageInfo.page[i].cpicInfo));
+            qDebug()<<"cpicNum:"<<pageInfo.page[i].cpicNum;
             for(j = 0;j < pageInfo.page[i].cpicNum;j++)
             {
                 printf("[%s:%d]:page[%d].cpic[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                    pageInfo.page[i].cpicInfo[j].global,pageInfo.page[i].cpicInfo[j].name,pageInfo.page[i].cpicInfo[j].pageId,
-                    pageInfo.page[i].cpicInfo[j].id,pageInfo.page[i].cpicInfo[j].x,pageInfo.page[i].cpicInfo[j].y,
-                    pageInfo.page[i].cpicInfo[j].width,pageInfo.page[i].cpicInfo[j].height,pageInfo.page[i].cpicInfo[j].level);
+                       pageInfo.page[i].cpicInfo[j].global,pageInfo.page[i].cpicInfo[j].name,pageInfo.page[i].cpicInfo[j].pageId,
+                       pageInfo.page[i].cpicInfo[j].id,pageInfo.page[i].cpicInfo[j].x,pageInfo.page[i].cpicInfo[j].y,
+                       pageInfo.page[i].cpicInfo[j].width,pageInfo.page[i].cpicInfo[j].height,pageInfo.page[i].cpicInfo[j].level);
                 printf(" picIndex:0x%x,downlen:0x%x,uplen:0x%x \n",
-                    pageInfo.page[i].cpicInfo[j].picIndex,pageInfo.page[i].cpicInfo[j].downlen,pageInfo.page[i].cpicInfo[j].uplen);
+                       pageInfo.page[i].cpicInfo[j].picIndex,pageInfo.page[i].cpicInfo[j].downlen,pageInfo.page[i].cpicInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
             CNumAnalysis(fd,pageInfo.page[i].numNum,&(pageInfo.page[i].numInfo));
+            qDebug()<<"numNum:"<<pageInfo.page[i].numNum;
             for(j = 0;j < pageInfo.page[i].numNum;j++)
             {
                 printf("[%s:%d]:page[%d].Cnum[%d]info:\n",__FUNCTION__,__LINE__,i,j);
                 printf("***********************************\n");
                 printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].numInfo[j].global,pageInfo.page[i].numInfo[j].name,pageInfo.page[i].numInfo[j].pageId,
-                    pageInfo.page[i].numInfo[j].id,pageInfo.page[i].numInfo[j].x,pageInfo.page[i].numInfo[j].y,
-                    pageInfo.page[i].numInfo[j].width,pageInfo.page[i].numInfo[j].height,pageInfo.page[i].numInfo[j].level,
-                    pageInfo.page[i].numInfo[j].distype,pageInfo.page[i].numInfo[j].fpicorcol,pageInfo.page[i].numInfo[j].bpicorcol);
+                       pageInfo.page[i].numInfo[j].global,pageInfo.page[i].numInfo[j].name,pageInfo.page[i].numInfo[j].pageId,
+                       pageInfo.page[i].numInfo[j].id,pageInfo.page[i].numInfo[j].x,pageInfo.page[i].numInfo[j].y,
+                       pageInfo.page[i].numInfo[j].width,pageInfo.page[i].numInfo[j].height,pageInfo.page[i].numInfo[j].level,
+                       pageInfo.page[i].numInfo[j].distype,pageInfo.page[i].numInfo[j].fpicorcol,pageInfo.page[i].numInfo[j].bpicorcol);
                 printf(" fontIndex:0x%x,text:0x%x,align:%d,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].numInfo[j].fontIndex,pageInfo.page[i].numInfo[j].text,pageInfo.page[i].numInfo[j].align,
-                    pageInfo.page[i].numInfo[j].downlen,pageInfo.page[i].numInfo[j].uplen);
+                       pageInfo.page[i].numInfo[j].fontIndex,pageInfo.page[i].numInfo[j].text,pageInfo.page[i].numInfo[j].align,
+                       pageInfo.page[i].numInfo[j].downlen,pageInfo.page[i].numInfo[j].uplen);
                 printf("***********************************\n\n\n");
             }
 
@@ -1682,4 +2109,5 @@ int analysisBin()
     return 0;
 
 }
-#endif // UARTTEST_H
+
+

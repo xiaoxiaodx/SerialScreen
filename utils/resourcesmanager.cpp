@@ -5,6 +5,21 @@
 #include <QFile>
 #include <QDebug>
 #include <QFontDatabase>
+
+
+ResourcesManager* ResourcesManager::resmanager = NULL;
+
+
+ResourcesManager* ResourcesManager::getInstance()
+{
+    if(resmanager == NULL){
+        resmanager = new ResourcesManager();
+        return resmanager;
+    }else {
+        return resmanager;
+    }
+}
+
 ResourcesManager::ResourcesManager()
 {
 
@@ -57,7 +72,7 @@ QString ResourcesManager::getFontAbsolutePath(int index)
 
     return "";
 }
-void ResourcesManager::saveImage(int index,int w,int h,int format,unsigned char *data)
+void ResourcesManager::saveImage(int index,int w,int h,int format,char *data)
 {
 
 
@@ -80,7 +95,7 @@ void ResourcesManager::saveImage(int index,int w,int h,int format,unsigned char 
     }
 
 
-    QImage img(data,w,h,QImage::Format_RGB16);
+    QImage img((unsigned char*)data,w,h,QImage::Format_RGB16);
     QString filename = QString::number(index)+".png";
     if(img.save(filename,"PNG")){
 
@@ -120,6 +135,8 @@ void ResourcesManager::saveFont(int index,char *data,int len)
         DebugLog::getInstance()->writeLog("save font file is fail,open file fail,filepath:"+desFilePath);
 
     }
+
+
 
 }
 

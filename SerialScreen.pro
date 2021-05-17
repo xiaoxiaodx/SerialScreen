@@ -36,7 +36,8 @@ SOURCES += \
     shape/mrect.cpp \
     shape/mtext.cpp \
     utils/debuglog.cpp \
-    utils/resourcesmanager.cpp
+    utils/resourcesmanager.cpp \
+    utils/cmdproc.cpp
 
 
 HEADERS += \
@@ -58,12 +59,10 @@ HEADERS += \
     shape/mpoint.h \
     shape/mrect.h \
     shape/mtext.h \
-    uart/cmdproc.h \
-    uart/tty_dev.h \
-    uart/uarttest.h \
     util.h \
     utils/debuglog.h \
-    utils/resourcesmanager.h
+    utils/resourcesmanager.h \
+    utils/cmdproc.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
