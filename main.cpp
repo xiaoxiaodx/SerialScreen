@@ -41,11 +41,16 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    //QFontDatabase::addApplicationFont("16.Fon");
 
-//    QTextCodec::setCodecForLocale( QTextCodec::codecForName("UTF-8" ));
 
-//    QString filePath = QString::fromLocal8Bit("中文.txt");
+
+//    QTextCodec *codec = QTextCodec::codecForName("UTF-8");
+//    QTextCodec::setCodecForLocale(codec);
+
+
+    //QTextCodec::setCodecForTr(QTextCodec::codecForName("GB2312"));
+       QTextCodec::setCodecForLocale(QTextCodec::codecForName("GB2312"));
+       //QTextCodec::setCodecForCStrings(QTextCodec::codecForName("GB2312"));
 
     onLoadFont("华文新魏1111.ttf");
     MainWindow w;

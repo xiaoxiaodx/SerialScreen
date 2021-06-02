@@ -2,7 +2,7 @@
 #include <QDebug>
 MyPage::MyPage(int id,QString name):id(id),name(name)
 {
-
+setObjectName(name);
 }
 
 

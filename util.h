@@ -28,6 +28,32 @@ QColor parse565(int rgb565value){
     return QColor(255*percentage_r,255*percentage_g,255*percentage_b);
 }
 
+Qt::Alignment parseAlignment(int v){
 
+    switch (v) {
+    case 0:
+        return Qt::AlignLeft | Qt::AlignTop;
+
+    case 1:
+        return Qt::AlignHCenter | Qt::AlignTop;
+
+    case 2:
+       return Qt::AlignRight | Qt::AlignTop;
+    case 4:
+        return Qt::AlignVCenter | Qt::AlignLeft;
+
+    case 5:
+        return Qt::AlignBottom | Qt::AlignHCenter;
+    case 6:
+        return Qt::AlignBottom | Qt::AlignRight;
+    case 8:
+        return Qt::AlignBottom | Qt::AlignLeft;
+
+    case 9:
+          return Qt::AlignVCenter | Qt::AlignHCenter;
+    case 10:
+       return Qt::AlignVCenter | Qt::AlignRight;
+    }
+}
 
 #endif // UTIL_H

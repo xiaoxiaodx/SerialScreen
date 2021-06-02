@@ -2,22 +2,22 @@
 #include <QPainter>
 #include <QtMath>
 #include <QDebug>
-MyGraph::MyGraph(QWidget *parent) : QWidget(parent)
+MyGraph::MyGraph(int id,QString name):mid(id),mname(name)
 {
-
+setObjectName(name);
 
     qDebug()<<"MyGraph";
 
     // 随机生成曲线第一条曲线的坐标
-    int x = 0, y = 0;
-    for (int i = 0; i < 10; ++i) {
-        x += qrand() % 30 + 20;
-        y = qrand() % 180 + 30;
+//    int x = 0, y = 0;
+//    for (int i = 0; i < 10; ++i) {
+//        x += qrand() % 30 + 20;
+//        y = qrand() % 180 + 30;
 
-        //listpt1 <<x<<y;
+//        //listpt1 <<x<<y;
 
-        addPoint(1,QPointF(x,y));
-    }
+//        addPoint(1,QPointF(x,y));
+//    }
 
 //    // 第二条星行曲线的坐标
 //    listpt2 << QPointF(0, 150) << QPointF(50, 50) << QPointF(150, 0) << QPointF(50, -50)
@@ -32,10 +32,11 @@ void MyGraph::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing,true);
-    /*
 
-    drawBacgroud(&painter);*/
 
+    drawBacgroud(&painter);
+
+    drawGrid(&painter);
     drawCurve(&painter);
 
 
@@ -44,6 +45,15 @@ void MyGraph::paintEvent(QPaintEvent *event)
     for (int i = 0; i < listpt1.length() ; i += 2) {
         painter.drawEllipse(listpt1[i]-3, listpt1[i+1]-3, 6, 6);
     }
+    for (int i = 0; i < listpt2.length() ; i += 2) {
+        painter.drawEllipse(listpt2[i]-3, listpt2[i+1]-3, 6, 6);
+    }
+    for (int i = 0; i < listpt3.length() ; i += 2) {
+        painter.drawEllipse(listpt3[i]-3, listpt3[i+1]-3, 6, 6);
+    }
+    for (int i = 0; i < listpt4.length() ; i += 2) {
+        painter.drawEllipse(listpt4[i]-3, listpt4[i+1]-3, 6, 6);
+    }
 
 }
 void MyGraph::drawBacgroud(QPainter *pt)
@@ -51,12 +61,15 @@ void MyGraph::drawBacgroud(QPainter *pt)
 
     pt->save();
     pt->setPen(Qt::NoPen);
-    pt->setBrush(bgcolor);
+
     if(isuseimg){
 
-        pt->drawImage(rect(),bgimg);
-    }else{
+        if(bgimg == nullptr)
+            bgimg = new QImage(imgpath);
+        pt->drawImage(rect(),*bgimg);
 
+    }else{
+        pt->setBrush(bgcolor);
         pt->drawRect(rect());
     }
 
@@ -70,7 +83,23 @@ void MyGraph::drawGrid(QPainter* pt)
     pt->save();
     pt->setPen(QPen(gridColor,2));
 
+
+    //画竖线
+    for (int i=0;i<width();i+=gridw) {
+
+        pt->drawLine(i,0,i,height());
+
+    }
+    //画横线
+    for (int i=0;i<height();i+=gridh) {
+
+        pt->drawLine(0,i,width(),i);
+
+    }
+
     pt->restore();
+
+
 }
 
 
@@ -93,13 +122,49 @@ void MyGraph::drawCurve(QPainter*painter)
 
 }
 
+void MyGraph::delCurve(int channel)
+{
+    switch(channel) {
+    case 0:
+        listpt1.clear();
+        break;
+    case 1:
+        listpt2.clear();
+        break;
+    case 2:
+        listpt3.clear();
+        break;
+    case 3:
+        listpt4.clear();
+        break;
+    }
+}
+
+void MyGraph::addPoint(int channle,float data)
+{
+    int size = 0;
+    switch(channle) {
+    case 0:
+        size = listpt1.size();
+        break;
+    case 1:
+        size = listpt2.size();
+        break;
+    case 2:
+        size = listpt3.size();
+        break;
+    case 3:
+        size = listpt4.size();
+        break;
+    }
+
+    addPoint(channle,QPointF(size,data));
+}
 
 void MyGraph::addPoint(int channle,QPointF pt){
-
-
     smoothPoint(channle,pt);
-
 }
+
 void MyGraph::smoothPoint(int channle,QPointF pt){
 
 

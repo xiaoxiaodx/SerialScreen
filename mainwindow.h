@@ -28,10 +28,22 @@ public:
     void deletePage();
 public slots:
     void slot_serialRead();
+    void slot_switchPage(int id);
+    void slot_addShape(Shape *shpe);
     void slot_addPage(int id,QString name);
+    void slot_changeWidgetState(bool isshow,QString name,int state);
+
+    void slot_process_cmd(QString cmdtype,QString cmdstr);
+
     void slot_addMWidget(int pageid,QWidget *mwbase,int x,int y,int w,int h);
+
+
 private:
 
+    void msetProperty(QWidget *widget,QString proname,QVariant value);
+    QVariant mgetProperty(QObject *obj,QString pname);
+
+    void messageTip(QString str);
     void init();//初始化
     void initSerialPort(int baudrate);
     void btntest();

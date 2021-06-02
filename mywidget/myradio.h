@@ -2,7 +2,7 @@
 #define MYRADIO_H
 
 #include <QRadioButton>
-
+//多选一
 class MyRadio : public QWidget
 {
 public:
@@ -10,8 +10,7 @@ public:
 
 
 
-    void setBackgroudImg(QString imgpath);
-    void setBackgroudColor(QColor color);
+    void updateStyle();
     void layout();
     int mid;
     QString mname;

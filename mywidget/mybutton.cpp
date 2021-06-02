@@ -5,16 +5,7 @@
 MyButton::MyButton(int id,QString name):mid(id),mname(name)
 {
 
-    connect(this,SIGNAL(clicked()),this,SLOT(slot_clicked()));
-    connect(this,SIGNAL(pressed()),this,SLOT(slot_pressed()));
-    connect(this,SIGNAL(released()),this,SLOT(slot_released()));
-
-
-   /* setStyleSheet("QPushButton{border-image: url(H:/dmjProgram/qtPro/SerialScreen/res/1111111.png);}"
-    "QPushButton:pressed{border-image: url(:/res/localnet.png);}");*/
-
-    /*setStyleSheet("QPushButton{background-color: rgb(255, 0, 0);}"
-    "QPushButton:pressed{background-color: rgb(0, 255, 0);}");*/
+    setObjectName(name);
 }
 
 

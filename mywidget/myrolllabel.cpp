@@ -1,10 +1,10 @@
 #include "myrolllabel.h"
 
-
+#include <QTextCodec>
 #include <QScrollBar>
 MyRollLabel::MyRollLabel(int id,QString name):mid(id),mname(name)
 {
-
+setObjectName(name);
     //this->verticalScrollBar()->setVisible(false);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
@@ -14,8 +14,13 @@ void MyRollLabel::setText(QString txt)
     QTextEdit::setText(txt);
 }
 
-void MyRollLabel::setFont(QFont font,QColor fontcolor){
+void MyRollLabel::setFont(QString family ,char* txt,QColor fontcolor,int Strdistance){
 
+    QFont font(family);
+    font.setWordSpacing(Strdistance);
+    QTextCodec* gbk_codec = QTextCodec::codecForName("GBK");
+    QString gbk_string = gbk_codec->toUnicode(txt);
+    setText(gbk_string);
     QTextEdit::setFont(font);
     QTextEdit::setTextColor(fontcolor);
 }

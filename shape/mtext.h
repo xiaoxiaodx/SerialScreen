@@ -7,7 +7,7 @@ class MText : public Shape
 {
 public:
 
-    MText(float startx,float starty,float endx,float endy,QString text,QFont font,QColor fontcolor=QColor(0,0,0),int aligntype=(Qt::AlignHCenter | Qt::AlignVCenter));
+    MText(float startx,float starty,float endx,float endy,QString text,QFont font,QColor fontcolor=QColor(0,0,0),int aligntype=Qt::AlignHCenter,bool isusebg = false,QColor bgcolor=QColor(0,0,0));
 
     void draw(QPainter *pt) override;
 
@@ -24,7 +24,8 @@ public:
     void setLetterSpacing(qreal letterSpacing);
 
 private:
-
+    QColor mbgcolor;
+    bool misusebg;
     QColor mcolor;
     //左上
     float mstartx;

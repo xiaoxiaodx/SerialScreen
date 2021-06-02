@@ -14,6 +14,7 @@ public:
     static ResourcesManager *getInstance();
 
     QImage getImage(int index);
+    QFont getFont(int index);
     QString getImageAbsolutePath(int index);
     QString getFontFamily(int index);
     QString getFontAbsolutePath(int index);

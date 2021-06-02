@@ -220,7 +220,7 @@ typedef struct _ImageInfo_T{
 }ImageInfo_T;
 
 typedef struct _ImageParam_T{
-	int imageNum;
+    int imageNum;
 	ImageInfo_T *image;
 }ImageParam_T;
 
@@ -644,6 +644,14 @@ int cmdproc(char *str);
 **---------------------------------------------------------------------------*/
 
 #include <QObject>
+#include <shape/marc.h>
+#include <shape/mtext.h>
+#include <shape/mimage.h>
+#include <shape/mcurve.h>
+#include <shape/mdashboard.h>
+#include <shape/mline.h>
+#include <shape/mpoint.h>
+#include <shape/mrect.h>
 
 class SerialUtils  : public QObject{
 
@@ -662,13 +670,36 @@ signals:
     void signal_addPage(int id,QString name);
     void signal_addMWidget(int pageid,QWidget *mwbase,int x,int y,int w,int h);
 
+    void signal_switchPage(int id);
+    void signal_cleanPage(QColor color);
+    void signal_addShape(Shape *);
+
+    void signal_process_cmd(QString cmdtype,QString cmdstr);
+
 private:
     void widget_proc(char* cmd,char *str,int num,void *data);
     int cmdproc(char *str);
 
     void addPage(int id,QString name);
     void addButton(int id,QString name);
+    void addButton(int pageid,ButtonParam_T *bt);
+    void addLabel(int pageid,LabelParam_T *);
+    void addPanel(int pageid,PanelParam_T *);
+    void addSlide(int pageid,SlideParam_T *);
+    void addRolllabel(int pageid,RolllabelParam_T *);
+    void addGraph(int pageid,GraphParam_T *);
+    void addRadio(int pageid,RadioParam_T *);
+    void addCheckBox(int pageid,CheckBoxParam_T *);
+    void addHotSpot(int pageid,HotSpotParam_T *);
+    void addTimer(int pageid,TimerParam_T *);
+    void addVariable(int pageid,VariableParam_T *);
+    void addPic(int pageid,PicParam_T *);
+    void addCPic(int pageid,CPicParam_T *);
+    void addCNum(int pageid,CNumParam_T *);
+    void addPgbar(int pageid,PgbarParam_T *);
+
 };
+
 
 #endif	//_CMDPROC_H_
 

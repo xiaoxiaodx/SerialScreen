@@ -13,11 +13,10 @@ public:
     int mid;
     QString mname;
 
-    QColor foregroud_color;
     QColor backgroud_color;
     QColor hander_color;
 
-    QString foregroud_img;//文件所在绝对路径
+    QString hander_img;
     QString backgroud_img;
 
 

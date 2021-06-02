@@ -7,15 +7,33 @@ class MyGraph : public QWidget
 {
     Q_OBJECT
 public:
-    explicit MyGraph(QWidget *parent = nullptr);
+    explicit MyGraph(int id,QString name);
 
 
+    void addPoint(int channle,float data);
     void addPoint(int channle,QPointF pt);
     void smoothPoint(int channle,QPointF pt);
-
+    void delCurve(int channel);
     bool isuseimg;
     //0左到右  1右到左
     int flushdirection;
+
+    int mid;
+    QString mname;
+    QString imgpath;
+    QImage *bgimg = nullptr;
+    QColor bgcolor;
+    QColor gridColor;
+    int gridw;
+    int gridh;
+    int scalew;//水平刻度
+    int scaleh;//垂直刻度
+    QColor color1;
+    QColor color2;
+    QColor color3;
+    QColor color4;
+
+
 protected:
     void paintEvent(QPaintEvent *event);
 signals:
@@ -41,19 +59,6 @@ private:
     void drawGrid(QPainter*);
     void drawCurve(QPainter*);
 
-
-    QImage bgimg;
-    QColor bgcolor;
-    QColor gridColor;
-    int gridw;
-    int gridh;
-
-    int scalew;//水平刻度
-    int scaleh;//垂直刻度
-    QColor color1;
-    QColor color2;
-    QColor color3;
-    QColor color4;
 
     QList<double> listpt1;
     QList<double> listpt2;

@@ -33,6 +33,21 @@
 #include "cmdproc.h"
 #include <QDebug>
 
+#include <utils/resourcesmanager.h>
+#include <mywidget/mybutton.h>
+#include <mywidget/mygraph.h>
+#include <mywidget/mylabel.h>
+#include <mywidget/mypage.h>
+#include <mywidget/myprogressbar.h>
+#include <mywidget/myradio.h>
+#include <mywidget/myrolllabel.h>
+#include <mywidget/mysilder.h>
+#include <mywidget/mypic.h>
+#include <mywidget/myhotspot.h>
+
+#include <mywidget/mycheck.h>
+#include <mywidget/mydial.h>
+#include "util.h"
 /******************************************************************************
 *	Macros
 ******************************************************************************/
@@ -167,849 +182,864 @@ int btos(char *buf)
     return value;
 }
 
-int ButtonAnalysis(int fd,int num,ButtonParam_T **info)
+int ButtonAnalysis(int fd,int num,ButtonParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
-    if(num > 0)
-    {
-        *info = (ButtonParam_T *)malloc(sizeof(ButtonParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,28);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->distype = buf[18];
-            if(info[j]->distype != 0)
-            {
-                info[j]->fpic = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
-                info[j]->bpic = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
-            }
-            else
-            {
-                info[j]->fpic = (0x0000FF00 & (buf[24] << 8)) | (0x000000FF & buf[23]);
-                info[j]->bpic = (0x0000FF00 & (buf[26] << 8)) | (0x000000FF & buf[25]);
-            }
+	int j = 0;
+	char buf[128] = {0};		
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,28);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].distype = buf[18];
+			if(info[j].distype != 0)
+			{
+				info[j].fpic = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
+				info[j].bpic = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
+			}
+			else
+			{
+				info[j].fpic = (0x0000FF00 & (buf[24] << 8)) | (0x000000FF & buf[23]);
+				info[j].bpic = (0x0000FF00 & (buf[26] << 8)) | (0x000000FF & buf[25]);
+			}
+			
+			info[j].txtlen = buf[27];
+			if(info[j].txtlen > 0)
+			{
+				info[j].txt = (char *)malloc(sizeof(char) * info[j].txtlen);
+				memset(info[j].txt,0,info[j].txtlen);
+				read(fd,info[j].txt,info[j].txtlen);
+                qDebug()<<"txt:"<<info[j].txt;
+			}
+			
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,6);
+			info[j].fontIndex = buf[0];
+			info[j].txtColor = (0x0000FF00 & (buf[2] << 8)) | (0x000000FF & buf[1]);
+			info[j].swType = buf[3];
+			info[j].downlen = (0x0000FF00 & (buf[5] << 8)) | (0x000000FF & buf[4]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+                qDebug()<<"downcmd:\n"<<info[j].downcmd;
+			}
 
-            info[j]->txtlen = buf[27];
-            if(info[j]->txtlen > 0)
-            {
-                info[j]->txt = (char *)malloc(sizeof(char) * info[j]->txtlen);
-                memset(info[j]->txt,0,info[j]->txtlen);
-                read(fd,info[j]->txt,info[j]->txtlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,6);
-            info[j]->fontIndex = buf[0];
-            info[j]->txtColor = (0x0000FF00 & (buf[2] << 8)) | (0x000000FF & buf[1]);
-            info[j]->swType = buf[3];
-            info[j]->downlen = (0x0000FF00 & (buf[5] << 8)) | (0x000000FF & buf[4]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+                qDebug()<<"upcmd:\n"<<info[j].upcmd;
+			}
+		}
+	}
 
     return 1;
 }
 
-int LabelAnalysis(int fd,int num,LabelParam_T **labelInfo)
+int LabelAnalysis(int fd,int num,LabelParam_T *labelInfo)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
 
-    if(num > 0)
-    {
-        *labelInfo = (LabelParam_T *)malloc(sizeof(LabelParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,21);
-            labelInfo[j]->global = buf[0];
-            memcpy(labelInfo[j]->name,buf+1,6);
-            labelInfo[j]->pageId = buf[7];
-            labelInfo[j]->id = buf[8];
-            labelInfo[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            labelInfo[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            labelInfo[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            labelInfo[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            labelInfo[j]->level = buf[17];
-            labelInfo[j]->distype = buf[18];
-            labelInfo[j]->txtlen = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
-            if(labelInfo[j]->txtlen > 0)
-            {
-                labelInfo[j]->txt = (char *)malloc(sizeof(char) * labelInfo[j]->txtlen);
-                memset(labelInfo[j]->txt,0,labelInfo[j]->txtlen);
-                read(fd,labelInfo[j]->txt,labelInfo[j]->txtlen);
-            }
+	if(num > 0)
+	{		
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,21);			
+			labelInfo[j].global = buf[0];	
+			memcpy(labelInfo[j].name,buf+1,6);
+			labelInfo[j].pageId = buf[7];
+			labelInfo[j].id = buf[8];	
+			labelInfo[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			labelInfo[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			labelInfo[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			labelInfo[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			labelInfo[j].level = buf[17];
+			labelInfo[j].distype = buf[18];
+			labelInfo[j].txtlen = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);			
+			if(labelInfo[j].txtlen > 0)
+			{
+				labelInfo[j].txt = (char *)malloc(sizeof(char) * labelInfo[j].txtlen);
+				memset(labelInfo[j].txt,0,labelInfo[j].txtlen);
+				read(fd,labelInfo[j].txt,labelInfo[j].txtlen);
+				printf("[%s:%d] txt:%s\n",__FUNCTION__,__LINE__,labelInfo[j].txt);
+			}
 
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,11);
-            labelInfo[j]->fontIndex = buf[0];
-            labelInfo[j]->fpicorcol = (0x0000FF00 & (buf[2] << 8)) | (0x000000FF & buf[1]);
-            if(labelInfo[j]->distype != 0)
-            {
-                labelInfo[j]->bpicorcol = (0x0000FF00 & (buf[4] << 8)) | (0x000000FF & buf[3]);
-            }
-            else
-            {
-                labelInfo[j]->bpicorcol = (0x0000FF00 & (buf[6] << 8)) | (0x000000FF & buf[5]);
-            }
-            labelInfo[j]->txtSpace = buf[7];
-            labelInfo[j]->align = (ENUM_ALIGNMODE)buf[8];
-            labelInfo[j]->downlen = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            if(labelInfo[j]->downlen > 0)
-            {
-                labelInfo[j]->downcmd = (char *)malloc(sizeof(char) * labelInfo[j]->downlen);
-                memset(labelInfo[j]->downcmd,0,labelInfo[j]->downlen);
-                read(fd,labelInfo[j]->downcmd,labelInfo[j]->downlen);
-            }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,11);	
+			labelInfo[j].fontIndex = buf[0];
+			labelInfo[j].fpicorcol = (0x0000FF00 & (buf[2] << 8)) | (0x000000FF & buf[1]);
+			if(labelInfo[j].distype != 0)
+			{
+				labelInfo[j].bpicorcol = (0x0000FF00 & (buf[4] << 8)) | (0x000000FF & buf[3]);
+			}
+			else
+			{
+				labelInfo[j].bpicorcol = (0x0000FF00 & (buf[6] << 8)) | (0x000000FF & buf[5]);
+			}
+			labelInfo[j].txtSpace = buf[7];
+            labelInfo[j].align = (ENUM_ALIGNMODE)buf[8];
+			labelInfo[j].downlen = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);			
+			if(labelInfo[j].downlen > 0)
+			{
+				labelInfo[j].downcmd = (char *)malloc(sizeof(char) * labelInfo[j].downlen);
+				memset(labelInfo[j].downcmd,0,labelInfo[j].downlen);
+				read(fd,labelInfo[j].downcmd,labelInfo[j].downlen);
+				qDebug()<<"downcmd:\n"<<labelInfo[j].downcmd;
+			}
 
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            labelInfo[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(labelInfo[j]->uplen > 0)
-            {
-                labelInfo[j]->upcmd = (char *)malloc(sizeof(char) * labelInfo[j]->uplen);
-                memset(labelInfo[j]->upcmd,0,labelInfo[j]->uplen);
-                read(fd,labelInfo[j]->upcmd,labelInfo[j]->uplen);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			labelInfo[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(labelInfo[j].uplen > 0)
+			{
+				labelInfo[j].upcmd = (char *)malloc(sizeof(char) * labelInfo[j].uplen);
+				memset(labelInfo[j].upcmd,0,labelInfo[j].uplen);
+				read(fd,labelInfo[j].upcmd,labelInfo[j].uplen);
+				qDebug()<<"upcmd:"<<labelInfo[j].upcmd;
+			}
+		}
+	}
 
     return 1;
 }
 
-int ProgressBarAnalysis(int fd,int num,PgbarParam_T **info)
+int ProgressBarAnalysis(int fd,int num,PgbarParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,31);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].distype = buf[18];
+			info[j].hov = buf[19];
+			if(info[j].distype != 0)
+			{
+				info[j].fpic = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+				info[j].bpic = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
+			}
+			else
+			{
+				info[j].fpic = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+				info[j].bpic = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
+			}
+			
+			info[j].percent = buf[28];
+			info[j].downlen = (0x0000FF00 & (buf[30] << 8)) | (0x000000FF & buf[29]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				qDebug()<<"downcmd:"<<info[j].downcmd;
+			}
 
-    if(num > 0)
-    {
-        *info = (PgbarParam_T *)malloc(sizeof(PgbarParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,31);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->distype = buf[18];
-            info[j]->hov = buf[19];
-            if(info[j]->distype != 0)
-            {
-                info[j]->fpic = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-                info[j]->bpic = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
-            }
-            else
-            {
-                info[j]->fpic = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-                info[j]->bpic = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            }
-
-            info[j]->percent = buf[28];
-            info[j]->downlen = (0x0000FF00 & (buf[30] << 8)) | (0x000000FF & buf[29]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				qDebug()<<"upcmd:"<<info[j].upcmd;
+			}
+		}
+	}
 
     return 1;
 }
 
-int PanelAnalysis(int fd,int num,PanelParam_T **info)
+int PanelAnalysis(int fd,int num,PanelParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{		
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,30);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].distype = buf[18];
+			info[j].fpicorcol = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
+			if(info[j].distype != 0)
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[24] << 8)) | (0x000000FF & buf[23]);
+			}
+			else
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
+			}
+			
+			info[j].linewidth = buf[25];
+			info[j].angle = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);			
+			info[j].downlen = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				qDebug()<<"downcmd:"<<info[j].downcmd;
+			}
 
-    if(num > 0)
-    {
-        *info = (PanelParam_T *)malloc(sizeof(PanelParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,30);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->distype = buf[18];
-            info[j]->fpicorcol = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
-            if(info[j]->distype != 0)
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[24] << 8)) | (0x000000FF & buf[23]);
-            }
-            else
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
-            }
-
-            info[j]->linewidth = buf[25];
-            info[j]->angle = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            info[j]->downlen = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				qDebug()<<"upcmd:"<<info[j].upcmd;
+			}
+		}
+	}
 
     return 1;
 }
 
-int SliderAnalysis(int fd,int num,SlideParam_T **info)
+int SliderAnalysis(int fd,int num,SlideParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,38);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].hov = buf[18];
+			info[j].distype = buf[19];
+			if(info[j].distype != 0)
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
+			}
+			else
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
+			}
+			
+			info[j].min = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
+			info[j].max = (0x0000FF00 & (buf[31] << 8)) | (0x000000FF & buf[30]);			
+			info[j].value = (0x0000FF00 & (buf[33] << 8)) | (0x000000FF & buf[32]);
+			info[j].wid = buf[34];
+			info[j].hgt = buf[35];
+			info[j].downlen = (0x0000FF00 & (buf[37] << 8)) | (0x000000FF & buf[36]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				qDebug()<<"downcmd:"<<info[j].downcmd;
+			}
 
-    if(num > 0)
-    {
-        *info = (SlideParam_T *)malloc(sizeof(SlideParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,38);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->hov = buf[18];
-            info[j]->distype = buf[19];
-            if(info[j]->distype != 0)
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            }
-            else
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
-            }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				qDebug()<<"upcmd:"<<info[j].upcmd;
+			}
 
-            info[j]->min = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
-            info[j]->max = (0x0000FF00 & (buf[31] << 8)) | (0x000000FF & buf[30]);
-            info[j]->value = (0x0000FF00 & (buf[33] << 8)) | (0x000000FF & buf[32]);
-            info[j]->wid = buf[34];
-            info[j]->hgt = buf[35];
-            info[j]->downlen = (0x0000FF00 & (buf[37] << 8)) | (0x000000FF & buf[36]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->mvlen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->mvlen > 0)
-            {
-                info[j]->mvcmd = (char *)malloc(sizeof(char) * info[j]->mvlen);
-                memset(info[j]->mvcmd,0,info[j]->mvlen);
-                read(fd,info[j]->mvcmd,info[j]->mvlen);
-                printf("[%s:%d]:mvcmd:%s\n",__FUNCTION__,__LINE__,info[j]->mvcmd);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].mvlen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].mvlen > 0)
+			{
+				info[j].mvcmd = (char *)malloc(sizeof(char) * info[j].mvlen);
+				memset(info[j].mvcmd,0,info[j].mvlen);
+				read(fd,info[j].mvcmd,info[j].mvlen);
+				qDebug()<<"mvcmd:"<<info[j].mvcmd;
+			}
+		}
+	}
 
     return 1;
 }
 
-int RollLabelAnalysis(int fd,int num,RolllabelParam_T **info)
+int RollLabelAnalysis(int fd,int num,RolllabelParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,35);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].dir = buf[18];
+			info[j].distype = buf[19];
+			info[j].fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+			if(info[j].distype != 0)
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+			}
+			else
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
+			}
+			
+			info[j].step = buf[26];
+			info[j].period = (0x0000FF00 & (buf[28] << 8)) | (0x000000FF & buf[27]);	
+			info[j].fontIndex = buf[29];
+			info[j].enable = buf[30];
+			info[j].align = (ENUM_ALIGNMODE)buf[31];
+			info[j].txtSpace = buf[32];
+			info[j].txtlen = (0x0000FF00 & (buf[34] << 8)) | (0x000000FF & buf[33]);	
+			if(info[j].txtlen > 0)
+			{
+				info[j].txt = (char *)malloc(sizeof(char) * info[j].txtlen);
+				memset(info[j].txt,0,info[j].txtlen);
+				read(fd,info[j].txt,info[j].txtlen);
+				printf("[%s:%d] txt:%s\n",__FUNCTION__,__LINE__,info[j].txt);
+			}
+		
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].downlen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (RolllabelParam_T *)malloc(sizeof(RolllabelParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,35);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->dir = buf[18];
-            info[j]->distype = buf[19];
-            info[j]->fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-            if(info[j]->distype != 0)
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-            }
-            else
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
-            }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);	
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            info[j]->step = buf[26];
-            info[j]->period = (0x0000FF00 & (buf[28] << 8)) | (0x000000FF & buf[27]);
-            info[j]->fontIndex = buf[29];
-            info[j]->enable = buf[30];
-            info[j]->align = (ENUM_ALIGNMODE)buf[31];
-            info[j]->txtSpace = buf[32];
-            info[j]->txtlen = (0x0000FF00 & (buf[34] << 8)) | (0x000000FF & buf[33]);
-            if(info[j]->txtlen > 0)
-            {
-                info[j]->txt = (char *)malloc(sizeof(char) * info[j]->txtlen);
-                memset(info[j]->txt,0,info[j]->txtlen);
-                read(fd,info[j]->txt,info[j]->txtlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->downlen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int GraphAnalysis(int fd,int num,GraphParam_T **info)
+int GraphAnalysis(int fd,int num,GraphParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,39);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].distype = buf[18];
+			if(info[j].distype != 0)
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
+			}
+			else
+			{
+				info[j].bpicorcol = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
+			}
+			
+			info[j].lor = buf[23];;
+			info[j].gridcolor = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);			
+			info[j].winterval = buf[26];
+			info[j].hinterval = buf[27];
+			info[j].channel = buf[28];
+			info[j].channelcolor0 = (0x0000FF00 & (buf[30] << 8)) | (0x000000FF & buf[29]);
+			info[j].channelcolor1 = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
+			info[j].channelcolor2 = (0x0000FF00 & (buf[34] << 8)) | (0x000000FF & buf[33]);
+			info[j].channelcolor3 = (0x0000FF00 & (buf[36] << 8)) | (0x000000FF & buf[35]);
+			info[j].downlen = (0x0000FF00 & (buf[38] << 8)) | (0x000000FF & buf[37]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (GraphParam_T *)malloc(sizeof(GraphParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,39);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->distype = buf[18];
-            if(info[j]->distype != 0)
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[22] << 8)) | (0x000000FF & buf[21]);
-            }
-            else
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[20] << 8)) | (0x000000FF & buf[19]);
-            }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            info[j]->lor = buf[23];;
-            info[j]->gridcolor = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-            info[j]->winterval = buf[26];
-            info[j]->hinterval = buf[27];
-            info[j]->channel = buf[28];
-            info[j]->channelcolor0 = (0x0000FF00 & (buf[30] << 8)) | (0x000000FF & buf[29]);
-            info[j]->channelcolor1 = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
-            info[j]->channelcolor2 = (0x0000FF00 & (buf[34] << 8)) | (0x000000FF & buf[33]);
-            info[j]->channelcolor3 = (0x0000FF00 & (buf[36] << 8)) | (0x000000FF & buf[35]);
-            info[j]->downlen = (0x0000FF00 & (buf[38] << 8)) | (0x000000FF & buf[37]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int RadioAnalysis(int fd,int num,RadioParam_T **info)
+int RadioAnalysis(int fd,int num,RadioParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,33);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].horv = buf[18];
+			info[j].distype = buf[19];
+			
+			if(info[j].distype != 0)
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
+			}
+			else
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[21] << 8))| (0x000000FF & buf[20]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
+			}
+			
+			info[j].focusindex = buf[28];
+			info[j].numofitem = buf[29];	
+			info[j].distance = buf[30];
+			info[j].downlen = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (RadioParam_T *)malloc(sizeof(RadioParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,33);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->horv = buf[18];
-            info[j]->distype = buf[19];
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            if(info[j]->distype != 0)
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            }
-            else
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[21] << 8))| (0x000000FF & buf[20]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
-            }
-
-            info[j]->focusindex = buf[28];
-            info[j]->numofitem = buf[29];
-            info[j]->distance = buf[30];
-            info[j]->downlen = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int CheckBoxAnalysis(int fd,int num,CheckBoxParam_T **info)
+int CheckBoxAnalysis(int fd,int num,CheckBoxParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,30);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].state = buf[18];
+			info[j].distype = buf[19];
+			
+			if(info[j].distype != 0)
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
+			}
+			else
+			{
+				info[j].fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+				info[j].bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
+			}
+			
+			info[j].downlen = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (CheckBoxParam_T *)malloc(sizeof(CheckBoxParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,30);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->state = buf[18];
-            info[j]->distype = buf[19];
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            if(info[j]->distype != 0)
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            }
-            else
-            {
-                info[j]->fpicorcol = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-                info[j]->bpicorcol = (0x0000FF00 & (buf[23] << 8)) | (0x000000FF & buf[22]);
-            }
-
-            info[j]->downlen = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int HotSpotAnalysis(int fd,int num,HotSpotParam_T **info)
+int HotSpotAnalysis(int fd,int num,HotSpotParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,20);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+		
+			info[j].downlen = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (HotSpotParam_T *)malloc(sizeof(HotSpotParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,20);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            info[j]->downlen = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int TimerAnalysis(int fd,int num,TimerParam_T **info)
+int TimerAnalysis(int fd,int num,TimerParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,15);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];			
+			info[j].level = buf[9];
+			info[j].period = (0x0000FF00 & (buf[11] << 8)) | (0x000000FF & buf[10]);
+			info[j].enable = buf[12];
+			info[j].eventlen = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			if(info[j].eventlen > 0)
+			{
+				info[j].event = (char *)malloc(sizeof(char) * info[j].eventlen);
+				memset(info[j].event,0,info[j].eventlen);
+				read(fd,info[j].event,info[j].eventlen);
+				printf("[%s:%d] event:%s\n",__FUNCTION__,__LINE__,info[j].event);
+			}
+		}
+	}
 
-    if(num > 0)
-    {
-        *info = (TimerParam_T *)malloc(sizeof(TimerParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,15);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->level = buf[9];
-            info[j]->period = (0x0000FF00 & (buf[11] << 8)) | (0x000000FF & buf[10]);
-            info[j]->enable = buf[12];
-            info[j]->eventlen = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            if(info[j]->eventlen > 0)
-            {
-                info[j]->event = (char *)malloc(sizeof(char) * info[j]->eventlen);
-                memset(info[j]->event,0,info[j]->eventlen);
-                read(fd,info[j]->event,info[j]->eventlen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int VariableAnalysis(int fd,int num,VariableParam_T **info)
+int VariableAnalysis(int fd,int num,VariableParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,17);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];			
+			info[j].level = buf[9];
+			info[j].vartype = buf[10];
+			if(info[j].vartype != 0)
+			{
+				info[j].val = btos(buf+11);
+				info[j].len = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+				if(info[j].len > 0)
+				{
+					info[j].text = (char *)malloc(sizeof(char) * info[j].len);
+					memset(info[j].text,0,info[j].len);
+					read(fd,info[j].text,info[j].len);
+					printf("[%s:%d]:text:%s\n",__FUNCTION__,__LINE__,info[j].text);
+				}
+			}
+			else
+			{
+				info[j].val = btos(buf+11);
+				info[j].len = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			}
+			
+		}
+	}
 
-    if(num > 0)
-    {
-        *info = (VariableParam_T *)malloc(sizeof(VariableParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,17);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->level = buf[9];
-            info[j]->vartype = buf[10];
-            if(info[j]->vartype != 0)
-            {
-                info[j]->val = btos(buf+11);
-                info[j]->len = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-                if(info[j]->len > 0)
-                {
-                    info[j]->text = (char *)malloc(sizeof(char) * info[j]->len);
-                    memset(info[j]->text,0,info[j]->len);
-                    read(fd,info[j]->text,info[j]->len);
-                    printf("[%s:%d]:text:%s\n",__FUNCTION__,__LINE__,info[j]->text);
-                }
-            }
-            else
-            {
-                info[j]->val = btos(buf+11);
-                info[j]->len = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            }
-
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int PicAnalysis(int fd,int num,PicParam_T **info)
+int PicAnalysis(int fd,int num,PicParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,22);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].picIndex = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
+		
+			info[j].downlen = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (PicParam_T *)malloc(sizeof(PicParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,22);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->picIndex = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            info[j]->downlen = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int CPicAnalysis(int fd,int num,CPicParam_T **info)
+int CPicAnalysis(int fd,int num,CPicParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,22);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].picIndex = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
+		
+			info[j].downlen = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (CPicParam_T *)malloc(sizeof(CPicParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,22);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->picIndex = (0x0000FF00 & (buf[19] << 8)) | (0x000000FF & buf[18]);
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
-            info[j]->downlen = (0x0000FF00 & (buf[21] << 8)) | (0x000000FF & buf[20]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
-
-    return 1;
+	return 1;
 }
 
-int CNumAnalysis(int fd,int num,CNumParam_T **info)
+int CNumAnalysis(int fd,int num,CNumParam_T *info)
 {
-    int j = 0;
-    char buf[128] = {0};
+	int j = 0;
+	char buf[128] = {0};
+	
+	if(num > 0)
+	{
+		for(j = 0;j < num;j++)
+		{
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,33);
+			info[j].global = buf[0];
+			memcpy(info[j].name,buf+1,6);
+			info[j].pageId = buf[7];
+			info[j].id = buf[8];
+			info[j].x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
+			info[j].y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
+			info[j].width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
+			info[j].height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
+			info[j].level = buf[17];
+			info[j].distype = buf[18];
+			info[j].text = btos(buf+19);
+			info[j].fontIndex = buf[23];
+			info[j].fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
+			
+			if(info[j].distype != 0)
+			{				
+				info[j].bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
+			}
+			else
+			{				
+				info[j].bpicorcol = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
+			}
+			info[j].align = (ENUM_ALIGNMODE)buf[30];
+			info[j].downlen = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
+			if(info[j].downlen > 0)
+			{
+				info[j].downcmd = (char *)malloc(sizeof(char) * info[j].downlen);
+				memset(info[j].downcmd,0,info[j].downlen);
+				read(fd,info[j].downcmd,info[j].downlen);
+				printf("[%s:%d] downcmd:%s\n",__FUNCTION__,__LINE__,info[j].downcmd);
+			}
 
-    if(num > 0)
-    {
-        *info = (CNumParam_T *)malloc(sizeof(CNumParam_T) * num);
-        for(j = 0;j < num;j++)
-        {
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,33);
-            info[j]->global = buf[0];
-            memcpy(info[j]->name,buf+1,6);
-            info[j]->pageId = buf[7];
-            info[j]->id = buf[8];
-            info[j]->x = (0x0000FF00 & (buf[10] << 8)) | (0x000000FF & buf[9]);
-            info[j]->y = (0x0000FF00 & (buf[12] << 8)) | (0x000000FF & buf[11]);
-            info[j]->width = (0x0000FF00 & (buf[14] << 8)) | (0x000000FF & buf[13]);
-            info[j]->height = (0x0000FF00 & (buf[16] << 8)) | (0x000000FF & buf[15]);
-            info[j]->level = buf[17];
-            info[j]->distype = buf[18];
-            info[j]->text = btos(buf+19);
-            info[j]->fontIndex = buf[23];
-            info[j]->fpicorcol = (0x0000FF00 & (buf[25] << 8)) | (0x000000FF & buf[24]);
-
-            if(info[j]->distype != 0)
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[27] << 8)) | (0x000000FF & buf[26]);
-            }
-            else
-            {
-                info[j]->bpicorcol = (0x0000FF00 & (buf[29] << 8)) | (0x000000FF & buf[28]);
-            }
-            info[j]->align = (ENUM_ALIGNMODE)buf[30];
-            info[j]->downlen = (0x0000FF00 & (buf[32] << 8)) | (0x000000FF & buf[31]);
-            if(info[j]->downlen > 0)
-            {
-                info[j]->downcmd = (char *)malloc(sizeof(char) * info[j]->downlen);
-                memset(info[j]->downcmd,0,info[j]->downlen);
-                read(fd,info[j]->downcmd,info[j]->downlen);
-            }
-
-            memset(buf,0,sizeof(buf));
-            read(fd,buf,2);
-            info[j]->uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
-            if(info[j]->uplen > 0)
-            {
-                info[j]->upcmd = (char *)malloc(sizeof(char) * info[j]->uplen);
-                memset(info[j]->upcmd,0,info[j]->uplen);
-                read(fd,info[j]->upcmd,info[j]->uplen);
-            }
-        }
-    }
+			memset(buf,0,sizeof(buf));
+			read(fd,buf,2);
+			info[j].uplen = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
+			if(info[j].uplen > 0)
+			{
+				info[j].upcmd = (char *)malloc(sizeof(char) * info[j].uplen);
+				memset(info[j].upcmd,0,info[j].uplen);
+				read(fd,info[j].upcmd,info[j].uplen);	
+				printf("[%s:%d] upcmd:%s\n",__FUNCTION__,__LINE__,info[j].upcmd);
+			}
+		}
+	}
 
     return 1;
 }
@@ -1018,17 +1048,240 @@ void SerialUtils::widget_proc(char *cmd,char *str,int num,void *data)
 {
 
     int ret=-1;
+
+    Shape *shape = nullptr;
     if(strcmp(cmd,"page")==0){
 
         pageData_S param = {0};
         memset(&param,0,sizeof(param));
         ret=sscanf(str,"%d",&(param.id));
 
+        emit signal_switchPage(param.id);
+
+        return ;
+    }else if(strcmp(cmd,"clean")==0){
+        cleanData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.color));
+
+        emit signal_cleanPage(parse565(param.color));
+
+        return ;
+    }else if(strcmp(cmd,"point")==0){
+        pointData_S param = {0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.color));
+
+        shape = new MPoint(param.x,param.y,parse565(param.color));
 
 
+
+    }else if(strcmp(cmd,"line")==0){
+
+        lineData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x1),&(param.y1),&(param.x2),&(param.y2),&(param.color));
+        shape = new MLine(param.x1,param.y1,param.x2,param.y2,parse565(param.color));
+
+
+
+    }else if(strcmp(cmd,"rect")==0){
+
+        rectData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+
+        shape = new MRect(param.x,param.y,param.x+param.width,param.y+param.hight,false,parse565(param.color));
+
+    }else if(strcmp(cmd,"fillRect")==0){
+        frectData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.color));
+
+        shape = new MRect(param.x,param.y,param.x+param.width,param.y+param.hight,true,parse565(param.color));
+
+
+    }else if(strcmp(cmd,"pie")==0){
+
+        pieData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.color));
+
+        shape = new MArc(param.x,param.y,param.radius,param.a0,param.a1,parse565(param.color),true);
+
+
+    }else if(strcmp(cmd,"arc")==0){
+        arcData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.a0),&(param.a1),&(param.pensize),&(param.color));
+
+
+        shape = new MArc(param.x,param.y,param.radius,param.a0,param.a1,parse565(param.color),false);
+
+
+    }else if(strcmp(cmd,"circle")==0){
+        cirData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+
+        shape = new MArc(param.x,param.y,param.radius,0,360,parse565(param.color),false);
+
+    }else if(strcmp(cmd,"fillCircle")==0){
+        fcirData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d",&(param.x),&(param.y),&(param.radius),&(param.color));
+        shape = new MArc(param.x,param.y,param.radius,0,360,parse565(param.color),true);
+
+
+    }else if(strcmp(cmd,"picture")==0){
+
+        picData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d",&(param.x),&(param.y),&(param.id));
+
+        QImage img(ResourcesManager::getInstance()->getImageAbsolutePath(param.id));
+        shape = new MImage(param.x,param.y,img.width(),img.height(),0,img);
+
+
+    }else if(strcmp(cmd,"cutChart")==0){
+        piccData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d,%d,%d,%d",&(param.x),&(param.y),&(param.width),&(param.hight),&(param.id));
+
+
+    }else if(strcmp(cmd,"str")==0){
+
+        strData_S param={0};
+        memset(&param,0,sizeof(param));
+
+        ret=sscanf(str,"%d,%d,%d,%d,%d,%d,%d,%d,%d,%s",\
+                   &(param.x),&(param.y),&(param.width),&(param.hight),\
+                   &(param.fontindex),&(param.alignment),&(param.Usebackcolor),\
+                   &(param.fcolor),&(param.bcolor),\
+                   &(param.str));
+
+
+        QFont font(ResourcesManager::getInstance()->getFontFamily(param.fontindex));
+        shape = new MText(param.x,param.y,param.x+param.width,param.y+param.hight,param.str,font,
+                          parse565(param.fcolor),
+                          parseAlignment(param.alignment),
+                          param.Usebackcolor>0,
+                          parse565(param.bcolor));
+
+    }/*else if(strcmp(cmd,"refresh")==0){
+        refData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%s",&(param.name));
+
+
+        emit signal_process_cmd(param.name,cmd,str);
+        return;
+    }else if(strcmp(cmd,"click")==0){
+        clickData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d",&(param.name),&(param.event));
+
+        emit signal_process_cmd(param.name,cmd,str);
+        return;
+
+    }else if(strcmp(cmd,"echo")==0){
+        ecohData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.name));
+
+    }else if(strcmp(cmd,"echon")==0){
+        ecohnData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d,%d",&(param.name),&(param.n));
+
+    }else if(strcmp(cmd,"hide")==0){
+        hideData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+
+    }else if(strcmp(cmd,"show")==0){
+        showData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d",&(param.name),&(param.state));
+
+    }else if(strcmp(cmd,"re")==0){
+        reData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.en));
+
+    }else if(strcmp(cmd,"curveAddData")==0){
+        addnData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.num));
+
+
+    }else if(strcmp(cmd,"curveAdd")==0){
+
+        addData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d,%d",&(param.name),&(param.channel),&(param.data));
+    }else if(strcmp(cmd,"curveDelete")==0){
+
+        delData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d",&(param.name),&(param.channel));
+
+    }else if(strcmp(cmd,"calTouch")==0){
+
+
+    }else if(strcmp(cmd,"reset")==0){
+
+
+    }else if(strcmp(cmd,"baudRate")==0){
+        baudData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.baud));
+
+    }else if(strcmp(cmd,"lightAdjust")==0){
+
+        dimData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.val)  );
+    }else if(strcmp(cmd,"rand")==0){
+        randData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.val));
+
+    }else if(strcmp(cmd,"strLen")==0){
+        slenData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%d",&(param.name),&(param.val));
+
+    }else if(strcmp(cmd,"strCopy")==0){
+        scopyData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%[^,]",&(param.dst),&(param.src));
+
+    }else if(strcmp(cmd,"numCopy")==0){
+        sncopyData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%[^,],%[^,],%d",&(param.dst),&(param.src),&(param.num));
+
+    }else if(strcmp(cmd,"sleep")==0){
+        sleepData_S param={0};
+        memset(&param,0,sizeof(param));
+        ret=sscanf(str,"%d",&(param.state)  );
+
+    }*/else{
+
+
+        emit signal_process_cmd(cmd,str);
+        return;
     }
 
+
+    if(shape != nullptr)
+        emit signal_addShape(shape);
 }
+
+
+
+
 //页面
 int page_proc(char *str,int num,void *data)
 {
@@ -1371,11 +1624,11 @@ int SerialUtils::cmdproc(char *str)
                 if(!strcmp(cmdProcTbl[i].cmd,cmdstr))
                 {
 
-                   // printf("[%s:%d]:pParam=%s!cmd = %s,cmdproc = %p\r\n",__FUNCTION__,__LINE__,pParam,cmdProcTbl[i].cmd,cmdProcTbl[i].cmdproc);
+                    // printf("[%s:%d]:pParam=%s!cmd = %s,cmdproc = %p\r\n",__FUNCTION__,__LINE__,pParam,cmdProcTbl[i].cmd,cmdProcTbl[i].cmdproc);
                     qDebug()<<"cmd:"<<cmdProcTbl[i].cmd;
 
                     pParam=str+strlen(cmdProcTbl[i].cmd)+1;
-                    //ret=cmdProcTbl[i].cmdproc(pParam,cmdProcTbl[i].num,NULL);
+                    ret=cmdProcTbl[i].cmdproc(pParam,cmdProcTbl[i].num,NULL);
                     widget_proc(cmdProcTbl[i].cmd,pParam,cmdProcTbl[i].num,NULL);
                     break;
                 }
@@ -1444,17 +1697,7 @@ int ParseSerialSend(char *s_buf,int len)
 }
 
 
-#include <utils/resourcesmanager.h>
-#include <mywidget/mybutton.h>
-#include <mywidget/mygraph.h>
-#include <mywidget/mylabel.h>
-#include <mywidget/mypage.h>
-#include <mywidget/myprogressbar.h>
-#include <mywidget/myradio.h>
-#include <mywidget/myrolllabel.h>
-#include <mywidget/mysilder.h>
-#include "util.h"
-#include <QFile>
+
 
 int SerialUtils::ParseSerialComm(char *str,int len)
 {
@@ -1475,7 +1718,6 @@ int SerialUtils::ParseSerialComm(char *str,int len)
             return -1;
         }
     }
-
     else if(serParam.loadflag == 1)
     {
         if(str[0] == 0x80) //80 EF CD 20 1C
@@ -1541,15 +1783,8 @@ int SerialUtils::ParseSerialComm(char *str,int len)
 int SerialUtils::analysisBin()
 {
     int fd = 0;
-    fd = open("H:/dmjProgram/qtPro/LKdata.bin", O_RDWR); //串口接收bin文件到一个固定的位置或者SD卡拷贝到固定路径
+    fd = open("H:/dmjProgram/qtPro/LKdata.bin", O_RDWR|O_BINARY); //串口接收bin文件到一个固定的位置或者SD卡拷贝到固定路径
 
-    QFile file("H:/dmjProgram/qtPro/LKdata.bin");
-
-    if(!file.open(QIODevice::ReadOnly)){
-
-        qDebug()<<"bin文件打开失败";
-        return 0;
-    }
 
 
     qDebug()<<"fd:"<<fd;
@@ -1565,8 +1800,7 @@ int SerialUtils::analysisBin()
     memset(&pageInfo,0,sizeof(PageParam_T));
 
     memset(buf,0,sizeof(buf));
-
-    int ret = file.read(buf, 16);
+    read(fd, buf, 16); // 01 00 00 00
     direction = btos(buf);
     imageInfo.imageNum = btos(buf+4);
     fontInfo.fontNum = btos(buf+8);
@@ -1575,57 +1809,64 @@ int SerialUtils::analysisBin()
 
 
     ResourcesManager *resourcesManager = ResourcesManager::getInstance();
+    qDebug()<<"imageNum:"<<imageInfo.imageNum;
     if(imageInfo.imageNum > 0)
     {
         imageInfo.image = (ImageInfo_T *)malloc(sizeof(ImageInfo_T) * imageInfo.imageNum);
         memset(buf,0,sizeof(buf));
-        file.read(buf,4*imageInfo.imageNum); //图片地址
+        read(fd,buf,4*imageInfo.imageNum); //图片地址
+
         for(i = 0;i < imageInfo.imageNum;i++)
         {
             imageInfo.image[i].addr = btos(buf+4*i);
             imageInfo.image[i].index = i;
-            printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
+            //printf("[%s:%d]:imageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,imageInfo.image[i].addr);
         }
     }
 
+    qDebug()<<"fontNum:"<<fontInfo.fontNum;
     if(fontInfo.fontNum > 0)
     {
         fontInfo.font = (FontInfo_T *)malloc(sizeof(FontInfo_T) * fontInfo.fontNum);
         memset(buf,0,sizeof(buf));
-        file.read(buf,4*fontInfo.fontNum); //字库地址
+        read(fd,buf,4*fontInfo.fontNum); //字库地址
         for(i = 0;i < fontInfo.fontNum;i++)
         {
             fontInfo.font[i].addr = btos(buf+4*i);
-            printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
+            //printf("[%s:%d]:fontAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].addr);
         }
     }
 
+    qDebug()<<"pageNum:"<<pageInfo.pageNum;
     if(pageInfo.pageNum > 0)
     {
         pageInfo.page = (PageInfo_T *)malloc(sizeof(PageInfo_T)*pageInfo.pageNum);
         memset(buf,0,sizeof(buf));
-        file.read(buf,4*pageInfo.pageNum); //页面地址
+        read(fd,buf,4*pageInfo.pageNum); //页面地址
         for(i = 0;i < pageInfo.pageNum;i++)
         {
             pageInfo.page[i].addr = btos(buf+4*i);
             pageInfo.page[i].index = i;
-            printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
+            //printf("[%s:%d]:pageAddr[%d]:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].addr);
 
 
             emit signal_addPage(pageInfo.page[i].index,"");
         }
     }
 
+
+
     //开始读取图片头数据(8位) + 图片数据
+    qDebug()<<"save image file: "<<imageInfo.imageNum;
     for(i = 0;i < imageInfo.imageNum;i++)
     {
         memset(buf,0,sizeof(buf));
-        file.read(buf,3);
-        printf("[%s:%d]:buf:%s\n",__FUNCTION__,__LINE__,buf);
+        read(fd,buf,3);
+        //printf("[%s:%d]:buf:%s\n",__FUNCTION__,__LINE__,buf);
         if(!strcmp("BMP",buf))
         {
             memset(buf,0,sizeof(buf));
-            file.read(buf,5);
+            read(fd,buf,5);
             printf("[%s:%d]:buf:%d\n",__FUNCTION__,__LINE__,buf[0]);
             //if(buf[0] == imageInfo.image[i].index) //实际bin文件中index值不对，都是0，可以不判断
             {
@@ -1633,7 +1874,7 @@ int SerialUtils::analysisBin()
                 imageInfo.image[i].height = (0x0000FF00 & (buf[4] << 8)) | (0x000000FF & buf[3]);
                 printf("[%s:%d]:width:0x%x,height:0x%x\n",__FUNCTION__,__LINE__,imageInfo.image[i].width,imageInfo.image[i].height);
                 imageInfo.image[i].data = (char *)malloc(imageInfo.image[i].width * imageInfo.image[i].height*2);
-                file.read(imageInfo.image[i].data,imageInfo.image[i].width * imageInfo.image[i].height*2);
+                read(fd,imageInfo.image[i].data,imageInfo.image[i].width * imageInfo.image[i].height*2);
                 if(i == 0)
                 {
                     //					FILE *file = NULL;
@@ -1657,21 +1898,21 @@ int SerialUtils::analysisBin()
 
     //开始读取字体头数据(8位) + 字体数据
 
-
+    qDebug()<<"save font file: "<<fontInfo.fontNum;
     int fontsize = 0;
     for(i = 0;i < fontInfo.fontNum;i++)
     {
         memset(buf,0,sizeof(buf));
-        file.read(buf,4);
+        read(fd,buf,4);
         fontInfo.font[i].index = btos(buf);
-        printf("[%s:%d]:font[%d].index:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].index);
+        //printf("[%s:%d]:font[%d].index:0x%x\n",__FUNCTION__,__LINE__,i,fontInfo.font[i].index);
 
         memset(buf,0,sizeof(buf));
-        file.read(buf,4);
+        read(fd,buf,4);
 
         fontInfo.font[i].width = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
         fontInfo.font[i].height = (0x0000FF00 & (buf[3] << 8)) | (0x000000FF & buf[2]);
-        printf("[%s:%d]:width:0x%x,height:0x%x\n",__FUNCTION__,__LINE__,fontInfo.font[i].width,fontInfo.font[i].height);
+        //printf("[%s:%d]:width:0x%x,height:0x%x\n",__FUNCTION__,__LINE__,fontInfo.font[i].width,fontInfo.font[i].height);
         if((i + 1) < fontInfo.fontNum)
         {
             fontsize = fontInfo.font[i + 1].addr - fontInfo.font[i].addr - 8;
@@ -1681,11 +1922,11 @@ int SerialUtils::analysisBin()
             fontsize = pageInfo.page[0].addr - fontInfo.font[i].addr - 8;
         }
         fontInfo.font[i].data = (char *)malloc(sizeof(char) * fontsize);
-        file.read(fontInfo.font[i].data,fontsize);
+        read(fd,fontInfo.font[i].data,fontsize);
 
         resourcesManager->saveFont(fontInfo.font[i].index,
-                                                  fontInfo.font[i].data,
-                                                  fontsize);
+                                   fontInfo.font[i].data,
+                                   fontsize);
     }
 
 
@@ -1694,20 +1935,25 @@ int SerialUtils::analysisBin()
     for(i = 0;i < pageInfo.pageNum;i++)
     {
         memset(pageInfo.page[i].objname,0,sizeof(pageInfo.page[i].objname));
-        file.read(pageInfo.page[i].objname,9);
-       // qDebug<("[%s:%d]:objname:%s\n",__FUNCTION__,__LINE__,pageInfo.page[i].objname);
+        read(fd,pageInfo.page[i].objname,9);
+        // qDebug<("[%s:%d]:objname:%s\n",__FUNCTION__,__LINE__,pageInfo.page[i].objname);
+        qDebug()<<"page id:"<<pageInfo.page[i].index;
         memset(buf,0,sizeof(buf));
-        file.read(buf,4);
-        printf("[%s:%d]:buf:%s\n",__FUNCTION__,__LINE__,buf);
+        read(fd,buf,4);
+        QByteArray arr;
+        arr.append(buf,4);
+
+        qDebug()<<"buff:"<<arr.toHex();
         if(!strcmp("PAGE",buf))
         {
+
             memset(buf,0,sizeof(buf));
-            file.read(buf,2);
+            read(fd,buf,2);
             pageInfo.page[i].global = buf[0];
             pageInfo.page[i].picornot = buf[1];
-            printf("[%s:%d]:page[%d]:global:%d,picornot:%d\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].global,pageInfo.page[i].picornot);
+            //printf("[%s:%d]:page[%d]:global:%d,picornot:%d\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].global,pageInfo.page[i].picornot);
             memset(buf,0,sizeof(buf));
-            file.read(buf,4);
+            read(fd,buf,4);
             if(pageInfo.page[i].picornot == 0)
             {
                 pageInfo.page[i].bcOrpi = (0x0000FF00 & (buf[3] << 8)) | (0x000000FF & buf[2]);
@@ -1716,12 +1962,12 @@ int SerialUtils::analysisBin()
             {
                 pageInfo.page[i].bcOrpi = (0x0000FF00 & (buf[1] << 8)) | (0x000000FF & buf[0]);
             }
-            printf("[%s:%d]:page[%d]:bcOrpi:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].bcOrpi);
+            //printf("[%s:%d]:page[%d]:bcOrpi:0x%x\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].bcOrpi);
             memset(buf,0,sizeof(buf));
-            file.read(buf,8); //这8个字节不懂啥意思Before\After\TouchDown\TouchUp事件
+            read(fd,buf,8); //这8个字节不懂啥意思Before\After\TouchDown\TouchUp事件
 
             memset(buf,0,sizeof(buf));
-            file.read(buf,60); //读取15种控件的数量
+            read(fd,buf,60); //读取15种控件的数量
             pageInfo.page[i].buttonNum = btos(buf);
             pageInfo.page[i].labelNum = btos(buf+4);
             pageInfo.page[i].pgbarNum = btos(buf+8);
@@ -1744,364 +1990,144 @@ int SerialUtils::analysisBin()
                    pageInfo.page[i].checkboxNum,pageInfo.page[i].hotspotNum,pageInfo.page[i].timerNum,pageInfo.page[i].variableNum,
                    pageInfo.page[i].picNum,pageInfo.page[i].cpicNum,pageInfo.page[i].numNum);
 
-            ButtonAnalysis(fd,pageInfo.page[i].buttonNum,&(pageInfo.page[i].buttonInfo));
+			pageInfo.page[i].buttonInfo = (ButtonParam_T *)malloc(sizeof(ButtonParam_T) * pageInfo.page[i].buttonNum);
+			ButtonAnalysis(fd,pageInfo.page[i].buttonNum,pageInfo.page[i].buttonInfo);
 
-            qDebug()<<"buttonNum:"<<pageInfo.page[i].buttonNum;
+            //qDebug()<<"buttonNum:"<<pageInfo.page[i].buttonNum;
 
             for(j = 0;j < pageInfo.page[i].buttonNum;j++)
             {
-                printf("[%s:%d]:page[%d].button[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].buttonInfo[j].global,pageInfo.page[i].buttonInfo[j].name,pageInfo.page[i].buttonInfo[j].pageId,
-                       pageInfo.page[i].buttonInfo[j].id,pageInfo.page[i].buttonInfo[j].x,pageInfo.page[i].buttonInfo[j].y,
-                       pageInfo.page[i].buttonInfo[j].width,pageInfo.page[i].buttonInfo[j].height,pageInfo.page[i].buttonInfo[j].level,
-                       pageInfo.page[i].buttonInfo[j].distype,pageInfo.page[i].buttonInfo[j].fpic,pageInfo.page[i].buttonInfo[j].bpic);
-                printf(" txtlen:%d,txt:%s,fontIndex;%d,txtColor:%d \n swType:%d,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].buttonInfo[j].txtlen,pageInfo.page[i].buttonInfo[j].txt,pageInfo.page[i].buttonInfo[j].fontIndex,
-                       pageInfo.page[i].buttonInfo[j].txtColor,pageInfo.page[i].buttonInfo[j].swType,pageInfo.page[i].buttonInfo[j].downlen,
-                       pageInfo.page[i].buttonInfo[j].uplen);
-                printf("***********************************\n\n\n");
-
-                MyButton *mbtn = new MyButton(pageInfo.page[i].buttonInfo[j].id,pageInfo.page[i].buttonInfo[j].name);
-                mbtn->setText(pageInfo.page[i].buttonInfo[j].txt);
-
-                if(pageInfo.page[i].buttonInfo[j].distype == 0){
-
-
-                }else{
-
-                }
-
-                if(pageInfo.page[i].buttonInfo[j].level>1)
-                    mbtn->raise();
-
-                emit signal_addMWidget(i,
-                                       mbtn,
-                                       pageInfo.page[i].buttonInfo[j].x,
-                                       pageInfo.page[i].buttonInfo[j].y,
-                                       pageInfo.page[i].buttonInfo[j].width,
-                                       pageInfo.page[i].buttonInfo[j].height);
+                addButton(i,&pageInfo.page[i].buttonInfo[j]);
 
             }
-            //printf("[%s:%d]:page[%d].labelinfo:[%d]\n",__FUNCTION__,__LINE__,i,pageInfo.page[i].labelInfo[0].global);
-            LabelAnalysis(fd,pageInfo.page[i].labelNum,&(pageInfo.page[i].labelInfo));
-            qDebug()<<"labelNum:"<<pageInfo.page[i].labelNum;
+
+			pageInfo.page[i].labelInfo = (LabelParam_T *)malloc(sizeof(LabelParam_T) * pageInfo.page[i].labelNum);
+            LabelAnalysis(fd,pageInfo.page[i].labelNum,pageInfo.page[i].labelInfo);
+            //qDebug()<<"labelNum:"<<pageInfo.page[i].labelNum;
             for(j = 0;j < pageInfo.page[i].labelNum;j++)
             {
-                /*printf("[%s:%d]:page[%d].label[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpicorcol:0x%x,bpicorcol:0x%x \n",
-                    pageInfo.page[i].labelInfo[j].global,pageInfo.page[i].labelInfo[j].name,pageInfo.page[i].labelInfo[j].pageId,
-                    pageInfo.page[i].labelInfo[j].id,pageInfo.page[i].labelInfo[j].x,pageInfo.page[i].labelInfo[j].y,
-                    pageInfo.page[i].labelInfo[j].width,pageInfo.page[i].labelInfo[j].height,pageInfo.page[i].labelInfo[j].level,
-                    pageInfo.page[i].labelInfo[j].distype,pageInfo.page[i].labelInfo[j].fpicorcol,pageInfo.page[i].labelInfo[j].bpicorcol);
-                printf(" txtlen:%d,txt:%s,fontIndex;%d,txtSpace:%d \n align:%d,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].labelInfo[j].txtlen,pageInfo.page[i].labelInfo[j].txt,pageInfo.page[i].labelInfo[j].fontIndex,
-                    pageInfo.page[i].labelInfo[j].txtSpace,pageInfo.page[i].labelInfo[j].align,pageInfo.page[i].labelInfo[j].downlen,
-                    pageInfo.page[i].labelInfo[j].uplen);
-                printf("***********************************\n\n\n");*/
 
-                MyLabel *mlable = new MyLabel(pageInfo.page[i].labelInfo[j].id,pageInfo.page[i].labelInfo[j].name);
-                emit signal_addMWidget(i,
-                                       mlable,
-                                       pageInfo.page[i].labelInfo[j].x,
-                                       pageInfo.page[i].labelInfo[j].y,
-                                       pageInfo.page[i].labelInfo[j].width,
-                                       pageInfo.page[i].labelInfo[j].height);
+                addLabel(i,&pageInfo.page[i].labelInfo[j]);
+
             }
 
-            ProgressBarAnalysis(fd,pageInfo.page[i].pgbarNum,&(pageInfo.page[i].pgbarInfo));
-            qDebug()<<"pgbarNum:"<<pageInfo.page[i].pgbarNum;
+			pageInfo.page[i].pgbarInfo = (PgbarParam_T *)malloc(sizeof(PgbarParam_T) * pageInfo.page[i].pgbarNum);
+			ProgressBarAnalysis(fd,pageInfo.page[i].pgbarNum,pageInfo.page[i].pgbarInfo);
+            //qDebug()<<"pgbarNum:"<<pageInfo.page[i].pgbarNum;
             for(j = 0;j < pageInfo.page[i].pgbarNum;j++)
             {
-                /*printf("[%s:%d]:page[%d].pgbar[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].pgbarInfo[j].global,pageInfo.page[i].pgbarInfo[j].name,pageInfo.page[i].pgbarInfo[j].pageId,
-                    pageInfo.page[i].pgbarInfo[j].id,pageInfo.page[i].pgbarInfo[j].x,pageInfo.page[i].pgbarInfo[j].y,
-                    pageInfo.page[i].pgbarInfo[j].width,pageInfo.page[i].pgbarInfo[j].height,pageInfo.page[i].pgbarInfo[j].level,
-                    pageInfo.page[i].pgbarInfo[j].distype,pageInfo.page[i].pgbarInfo[j].fpic,pageInfo.page[i].pgbarInfo[j].bpic);
-                printf(" hov:%d,percent:%d,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].pgbarInfo[j].hov,pageInfo.page[i].pgbarInfo[j].percent,pageInfo.page[i].pgbarInfo[j].downlen,
-                    pageInfo.page[i].pgbarInfo[j].uplen);
-                printf("***********************************\n\n\n");*/
 
-
-                MyProgressbar *processbar = new MyProgressbar(pageInfo.page[i].pgbarInfo[j].id,pageInfo.page[i].pgbarInfo[j].name);
-
-
-                processbar->setValue(pageInfo.page[i].pgbarInfo[j].percent);
-                processbar->hov = pageInfo.page[i].pgbarInfo[j].hov;
-                processbar->radius = 5;
-                if(pageInfo.page[i].pgbarInfo[j].distype == 0){
-                    processbar->isuseimg = false;
-                    processbar->setBackgroudColor(parse565(pageInfo.page[i].pgbarInfo[j].bpic));
-                    processbar->setForegroundColor(parse565(pageInfo.page[i].pgbarInfo[j].fpic));
-                }else{
-                    processbar->isuseimg = true;
-
-                    QString bgimg = resourcesManager->getImageAbsolutePath(pageInfo.page[i].pgbarInfo[j].bpic);
-                    QString fgimg = resourcesManager->getImageAbsolutePath(pageInfo.page[i].pgbarInfo[j].fpic);
-                    processbar->setBackgroudImg(bgimg);
-                    processbar->setForegroundImg(fgimg);
-                }
-
-
-                processbar->updateStyle();
-
-                emit signal_addMWidget(i,processbar,pageInfo.page[i].pgbarInfo[j].x,pageInfo.page[i].pgbarInfo[j].y,
-                                       pageInfo.page[i].pgbarInfo[j].width,pageInfo.page[i].pgbarInfo[j].height);
+                addPgbar(i,&pageInfo.page[i].pgbarInfo[j]);
 
             }
 
-            PanelAnalysis(fd,pageInfo.page[i].panelNum,&(pageInfo.page[i].panelInfo));
-            qDebug()<<"panelNum:"<<pageInfo.page[i].panelNum;
+			pageInfo.page[i].panelInfo = (PanelParam_T *)malloc(sizeof(PanelParam_T) * pageInfo.page[i].panelNum);
+			PanelAnalysis(fd,pageInfo.page[i].panelNum,pageInfo.page[i].panelInfo);
+            //qDebug()<<"panelNum:"<<pageInfo.page[i].panelNum;
             for(j = 0;j < pageInfo.page[i].panelNum;j++)
             {
-                /*printf("[%s:%d]:page[%d].panel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].panelInfo[j].global,pageInfo.page[i].panelInfo[j].name,pageInfo.page[i].panelInfo[j].pageId,
-                    pageInfo.page[i].panelInfo[j].id,pageInfo.page[i].panelInfo[j].x,pageInfo.page[i].panelInfo[j].y,
-                    pageInfo.page[i].panelInfo[j].width,pageInfo.page[i].panelInfo[j].height,pageInfo.page[i].panelInfo[j].level,
-                    pageInfo.page[i].panelInfo[j].distype,pageInfo.page[i].panelInfo[j].fpicorcol,pageInfo.page[i].panelInfo[j].bpicorcol);
-                printf(" linewidth:%d,angle:%d,downlen:%d,uplen:%d \n",
-                    pageInfo.page[i].panelInfo[j].linewidth,pageInfo.page[i].panelInfo[j].angle,pageInfo.page[i].panelInfo[j].downlen,
-                    pageInfo.page[i].panelInfo[j].uplen);
-                printf("***********************************\n\n\n");*/
 
-
+                addPanel(i,&pageInfo.page[i].panelInfo[j]);
             }
 
-            SliderAnalysis(fd,pageInfo.page[i].slideNum,&(pageInfo.page[i].slideInfo));
-              qDebug()<<"slideNum:"<<pageInfo.page[i].slideNum;
+			pageInfo.page[i].slideInfo = (SlideParam_T *)malloc(sizeof(SlideParam_T) * pageInfo.page[i].slideNum);
+			SliderAnalysis(fd,pageInfo.page[i].slideNum,pageInfo.page[i].slideInfo);
+            //qDebug()<<"slideNum:"<<pageInfo.page[i].slideNum;
             for(j = 0;j < pageInfo.page[i].slideNum;j++)
             {
-                /*printf("[%s:%d]:page[%d].slide[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                    pageInfo.page[i].slideInfo[j].global,pageInfo.page[i].slideInfo[j].name,pageInfo.page[i].slideInfo[j].pageId,
-                    pageInfo.page[i].slideInfo[j].id,pageInfo.page[i].slideInfo[j].x,pageInfo.page[i].slideInfo[j].y,
-                    pageInfo.page[i].slideInfo[j].width,pageInfo.page[i].slideInfo[j].height,pageInfo.page[i].slideInfo[j].level,
-                    pageInfo.page[i].slideInfo[j].distype,pageInfo.page[i].slideInfo[j].fpicorcol,pageInfo.page[i].slideInfo[j].bpicorcol);
-                printf(" hov:%d,min:%d,max:%d,value:%d,wid:%d,hgt:%d,downlen:%d,uplen:%d,mvlen:%d \n",
-                    pageInfo.page[i].slideInfo[j].hov,pageInfo.page[i].slideInfo[j].min,pageInfo.page[i].slideInfo[j].max,
-                    pageInfo.page[i].slideInfo[j].value,pageInfo.page[i].slideInfo[j].wid,pageInfo.page[i].slideInfo[j].hgt,
-                    pageInfo.page[i].slideInfo[j].downlen,pageInfo.page[i].slideInfo[j].uplen,pageInfo.page[i].slideInfo[j].mvlen);
-                printf("***********************************\n\n\n");*/
 
 
-                MySilder *silder = new MySilder(pageInfo.page[i].slideInfo[j].id,pageInfo.page[i].slideInfo[j].name);
-
-                silder->foregroud_color= QColor("#ff0000");
-                silder->backgroud_color = QColor("#00ff00");
-                silder->hander_color = QColor("#0000ff");
-                silder->hov = pageInfo.page[i].slideInfo[j].hov;
-                silder->radius = 4;
-                silder->silderw = pageInfo.page[i].slideInfo[j].wid;
-                silder->silderh = pageInfo.page[i].slideInfo[j].hgt;
-                silder->setValue(pageInfo.page[i].slideInfo[j].value);
-                silder->setMinimum(pageInfo.page[i].slideInfo[j].min);
-                silder->setMaximum(pageInfo.page[i].slideInfo[j].max);
-                if(pageInfo.page[i].slideInfo[j].distype == 0){
-
-                    silder->foregroud_color = parse565(pageInfo.page[i].slideInfo[j].bpicorcol);
-                    silder->backgroud_color = parse565(pageInfo.page[i].slideInfo[j].bpicorcol);
-                    silder->hander_color = parse565(pageInfo.page[i].slideInfo[j].fpicorcol);
-
-                }else{
-                    silder->isuseimg = true;
-                    silder->foregroud_img = resourcesManager->getImageAbsolutePath(pageInfo.page[i].slideInfo[j].fpicorcol);
-                    silder->backgroud_img = resourcesManager->getImageAbsolutePath(pageInfo.page[i].slideInfo[j].bpicorcol);
-                }
-
-                //silder->setOrientation(Qt::Horizontal);
-
-                emit signal_addMWidget(i,silder,pageInfo.page[i].slideInfo[j].x,pageInfo.page[i].slideInfo[j].y,
-                                       pageInfo.page[i].slideInfo[j].width,pageInfo.page[i].slideInfo[j].height);
-                silder->updateStyle();
+                addSlide(i,&pageInfo.page[i].slideInfo[j]);
 
             }
-
-            RollLabelAnalysis(fd,pageInfo.page[i].rolllabelNum,&(pageInfo.page[i].rolllableInfo));
-             qDebug()<<"rolllableInfo:"<<pageInfo.page[i].rolllableInfo;
+			
+			pageInfo.page[i].rolllableInfo = (RolllabelParam_T *)malloc(sizeof(RolllabelParam_T) * pageInfo.page[i].rolllabelNum);
+			RollLabelAnalysis(fd,pageInfo.page[i].rolllabelNum,pageInfo.page[i].rolllableInfo);
+            qDebug()<<"rolllableInfo:"<<pageInfo.page[i].rolllableInfo;
             for(j = 0;j < pageInfo.page[i].rolllabelNum;j++)
             {
-                /*printf("[%s:%d]:page[%d].rolllabel[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].rolllableInfo[j].global,pageInfo.page[i].rolllableInfo[j].name,pageInfo.page[i].rolllableInfo[j].pageId,
-                       pageInfo.page[i].rolllableInfo[j].id,pageInfo.page[i].rolllableInfo[j].x,pageInfo.page[i].rolllableInfo[j].y,
-                       pageInfo.page[i].rolllableInfo[j].width,pageInfo.page[i].rolllableInfo[j].height,pageInfo.page[i].rolllableInfo[j].level,
-                       pageInfo.page[i].rolllableInfo[j].distype,pageInfo.page[i].rolllableInfo[j].fpicorcol,pageInfo.page[i].rolllableInfo[j].bpicorcol);
-                printf(" dir:%d,step:%d,period:%d,fontIndex:%d,enable:%d,txtSpace:%d,align:%d,txtlen:%d,txt:%s,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].rolllableInfo[j].dir,pageInfo.page[i].rolllableInfo[j].step,pageInfo.page[i].rolllableInfo[j].period,
-                       pageInfo.page[i].rolllableInfo[j].fontIndex,pageInfo.page[i].rolllableInfo[j].enable,pageInfo.page[i].rolllableInfo[j].txtSpace,
-                       pageInfo.page[i].rolllableInfo[j].align,pageInfo.page[i].rolllableInfo[j].txtlen,pageInfo.page[i].rolllableInfo[j].txt,
-                       pageInfo.page[i].rolllableInfo[j].downlen,pageInfo.page[i].rolllableInfo[j].uplen);
-                printf("***********************************\n\n\n");*/
 
+                addRolllabel(i,&pageInfo.page[i].rolllableInfo[j]);
 
-
-                /*MyRollLabel *mrolllable = new MyRollLabel(1,"222");
-                QFont font("16",10);
-                font.setWordSpacing(100);//字间距
-                mrolllable->setFont(font,QColor(255,0,0));
-                mrolllable->setLineWidth(5);
-
-
-
-                addMWidget(mrolllable,200,200,100,100);
-
-                mrolllable->setBackgroudImg("H:/dmjProgram/qtPro/SerialScreen/res/1111111.png");
-                mrolllable->setBackgroudColor(QColor(255,255,255));*/
             }
 
-            GraphAnalysis(fd,pageInfo.page[i].graphNum,&(pageInfo.page[i].graphInfo));
-            qDebug()<<"graphNum:"<<pageInfo.page[i].graphNum;
+			pageInfo.page[i].graphInfo = (GraphParam_T *)malloc(sizeof(GraphParam_T) * pageInfo.page[i].graphNum);
+			GraphAnalysis(fd,pageInfo.page[i].graphNum,pageInfo.page[i].graphInfo);
+            //qDebug()<<"graphNum:"<<pageInfo.page[i].graphNum;
             for(j = 0;j < pageInfo.page[i].graphNum;j++)
             {
-                printf("[%s:%d]:page[%d].graph[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,lor:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].graphInfo[j].global,pageInfo.page[i].graphInfo[j].name,pageInfo.page[i].graphInfo[j].pageId,
-                       pageInfo.page[i].graphInfo[j].id,pageInfo.page[i].graphInfo[j].x,pageInfo.page[i].graphInfo[j].y,
-                       pageInfo.page[i].graphInfo[j].width,pageInfo.page[i].graphInfo[j].height,pageInfo.page[i].graphInfo[j].level,
-                       pageInfo.page[i].graphInfo[j].distype,pageInfo.page[i].graphInfo[j].lor,pageInfo.page[i].graphInfo[j].bpicorcol);
-                printf(" gridcolor:0x%x,winterval:0x%x,hinterval:0x%x,channel:0x%x,channelcolor0:0x%x,channelcolor1:0x%x,channelcolor2:0x%x,channelcolor3:0x%x,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].graphInfo[j].gridcolor,pageInfo.page[i].graphInfo[j].winterval,pageInfo.page[i].graphInfo[j].hinterval,
-                       pageInfo.page[i].graphInfo[j].channel,pageInfo.page[i].graphInfo[j].channelcolor0,pageInfo.page[i].graphInfo[j].channelcolor1,
-                       pageInfo.page[i].graphInfo[j].channelcolor2,pageInfo.page[i].graphInfo[j].channelcolor3,
-                       pageInfo.page[i].graphInfo[j].downlen,pageInfo.page[i].graphInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                addGraph(i,&pageInfo.page[i].graphInfo[j]);
             }
 
-            RadioAnalysis(fd,pageInfo.page[i].radioNum,&(pageInfo.page[i].radioInfo));
-            qDebug()<<"radioNum:"<<pageInfo.page[i].radioNum;
+			pageInfo.page[i].radioInfo = (RadioParam_T *)malloc(sizeof(RadioParam_T) * pageInfo.page[i].radioNum);
+			RadioAnalysis(fd,pageInfo.page[i].radioNum,pageInfo.page[i].radioInfo);
+            //qDebug()<<"radioNum:"<<pageInfo.page[i].radioNum;
             for(j = 0;j < pageInfo.page[i].radioNum;j++)
             {
-                printf("[%s:%d]:page[%d].radio[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].radioInfo[j].global,pageInfo.page[i].radioInfo[j].name,pageInfo.page[i].radioInfo[j].pageId,
-                       pageInfo.page[i].radioInfo[j].id,pageInfo.page[i].radioInfo[j].x,pageInfo.page[i].radioInfo[j].y,
-                       pageInfo.page[i].radioInfo[j].width,pageInfo.page[i].radioInfo[j].height,pageInfo.page[i].radioInfo[j].level,
-                       pageInfo.page[i].radioInfo[j].distype,pageInfo.page[i].radioInfo[j].fpicorcol,pageInfo.page[i].radioInfo[j].bpicorcol);
-                printf(" horv:0x%x,focusindex:0x%x,numofitem:0x%x,distance:0x%x,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].radioInfo[j].horv,pageInfo.page[i].radioInfo[j].focusindex,pageInfo.page[i].radioInfo[j].numofitem,
-                       pageInfo.page[i].radioInfo[j].distance,pageInfo.page[i].radioInfo[j].downlen,pageInfo.page[i].radioInfo[j].uplen);
-                printf("***********************************\n\n\n");
+
+                addRadio(i,&pageInfo.page[i].radioInfo[j]);
             }
 
-            CheckBoxAnalysis(fd,pageInfo.page[i].checkboxNum,&(pageInfo.page[i].checkboxInfo));
-            qDebug()<<"checkboxNum:"<<pageInfo.page[i].checkboxNum;
+			pageInfo.page[i].checkboxInfo = (CheckBoxParam_T *)malloc(sizeof(CheckBoxParam_T) * pageInfo.page[i].checkboxNum);
+			CheckBoxAnalysis(fd,pageInfo.page[i].checkboxNum,pageInfo.page[i].checkboxInfo);
+            //qDebug()<<"checkboxNum:"<<pageInfo.page[i].checkboxNum;
             for(j = 0;j < pageInfo.page[i].checkboxNum;j++)
             {
-                printf("[%s:%d]:page[%d].checkbox[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].checkboxInfo[j].global,pageInfo.page[i].checkboxInfo[j].name,pageInfo.page[i].checkboxInfo[j].pageId,
-                       pageInfo.page[i].checkboxInfo[j].id,pageInfo.page[i].checkboxInfo[j].x,pageInfo.page[i].checkboxInfo[j].y,
-                       pageInfo.page[i].checkboxInfo[j].width,pageInfo.page[i].checkboxInfo[j].height,pageInfo.page[i].checkboxInfo[j].level,
-                       pageInfo.page[i].checkboxInfo[j].distype,pageInfo.page[i].checkboxInfo[j].fpicorcol,pageInfo.page[i].checkboxInfo[j].bpicorcol);
-                printf(" state:0x%x,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].checkboxInfo[j].state,pageInfo.page[i].checkboxInfo[j].downlen,pageInfo.page[i].checkboxInfo[j].uplen);
-                printf("***********************************\n\n\n");
+
+                addCheckBox(i,&pageInfo.page[i].checkboxInfo[j]);
             }
 
-            HotSpotAnalysis(fd,pageInfo.page[i].hotspotNum,&(pageInfo.page[i].hotspotInfo));
-            qDebug()<<"hotspotNum:"<<pageInfo.page[i].hotspotNum;
+			pageInfo.page[i].hotspotInfo = (HotSpotParam_T *)malloc(sizeof(HotSpotParam_T) * pageInfo.page[i].hotspotNum);
+			HotSpotAnalysis(fd,pageInfo.page[i].hotspotNum,pageInfo.page[i].hotspotInfo);
+            // qDebug()<<"hotspotNum:"<<pageInfo.page[i].hotspotNum;
             for(j = 0;j < pageInfo.page[i].hotspotNum;j++)
             {
-                printf("[%s:%d]:page[%d].hotspot[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                       pageInfo.page[i].hotspotInfo[j].global,pageInfo.page[i].hotspotInfo[j].name,pageInfo.page[i].hotspotInfo[j].pageId,
-                       pageInfo.page[i].hotspotInfo[j].id,pageInfo.page[i].hotspotInfo[j].x,pageInfo.page[i].hotspotInfo[j].y,
-                       pageInfo.page[i].hotspotInfo[j].width,pageInfo.page[i].hotspotInfo[j].height,pageInfo.page[i].hotspotInfo[j].level);
-                printf("downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].hotspotInfo[j].downlen,pageInfo.page[i].hotspotInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                addHotSpot(i,&pageInfo.page[i].hotspotInfo[j]);
             }
 
-
-            TimerAnalysis(fd,pageInfo.page[i].timerNum,&(pageInfo.page[i].timerInfo));
-            qDebug()<<"timerNum:"<<pageInfo.page[i].timerNum;
+			pageInfo.page[i].timerInfo = (TimerParam_T *)malloc(sizeof(TimerParam_T) * pageInfo.page[i].timerNum);
+			TimerAnalysis(fd,pageInfo.page[i].timerNum,pageInfo.page[i].timerInfo);
+            //qDebug()<<"timerNum:"<<pageInfo.page[i].timerNum;
             for(j = 0;j < pageInfo.page[i].timerNum;j++)
             {
-                printf("[%s:%d]:page[%d].timer[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d,level:%d \n",
-                       pageInfo.page[i].timerInfo[j].global,pageInfo.page[i].timerInfo[j].name,pageInfo.page[i].timerInfo[j].pageId,
-                       pageInfo.page[i].timerInfo[j].id,pageInfo.page[i].timerInfo[j].level);
-                printf("period:0x%x,enable:%d,eventlen:0x%x,event:%s\n",
-                       pageInfo.page[i].timerInfo[j].period,pageInfo.page[i].timerInfo[j].enable,pageInfo.page[i].timerInfo[j].eventlen,
-                       pageInfo.page[i].timerInfo[j].event);
-                printf("***********************************\n\n\n");
+                addTimer(i,&pageInfo.page[i].timerInfo[j]);
             }
 
-            VariableAnalysis(fd,pageInfo.page[i].variableNum,&(pageInfo.page[i].variableInfo));
-            qDebug()<<"variableNum:"<<pageInfo.page[i].variableNum;
+			pageInfo.page[i].variableInfo = (VariableParam_T *)malloc(sizeof(VariableParam_T) * pageInfo.page[i].variableNum);
+			VariableAnalysis(fd,pageInfo.page[i].variableNum,pageInfo.page[i].variableInfo);
+            //qDebug()<<"variableNum:"<<pageInfo.page[i].variableNum;
             for(j = 0;j < pageInfo.page[i].variableNum;j++)
             {
-                printf("[%s:%d]:page[%d].variable[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d,level:%d \n",
-                       pageInfo.page[i].variableInfo[j].global,pageInfo.page[i].variableInfo[j].name,pageInfo.page[i].variableInfo[j].pageId,
-                       pageInfo.page[i].variableInfo[j].id,pageInfo.page[i].variableInfo[j].level);
-                printf("vartype:0x%x,val:0x%x,len:0x%x \n",
-                       pageInfo.page[i].variableInfo[j].vartype,pageInfo.page[i].variableInfo[j].val,pageInfo.page[i].variableInfo[j].len);
-                printf("***********************************\n\n\n");
+                addVariable(i,&pageInfo.page[i].variableInfo[j]);
             }
 
-            PicAnalysis(fd,pageInfo.page[i].picNum,&(pageInfo.page[i].picInfo));
+			pageInfo.page[i].picInfo = (PicParam_T *)malloc(sizeof(PicParam_T) * pageInfo.page[i].picNum);
+            PicAnalysis(fd,pageInfo.page[i].picNum,pageInfo.page[i].picInfo);
             qDebug()<<"picNum:"<<pageInfo.page[i].picNum;
             for(j = 0;j < pageInfo.page[i].picNum;j++)
             {
-                printf("[%s:%d]:page[%d].pic[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                       pageInfo.page[i].picInfo[j].global,pageInfo.page[i].picInfo[j].name,pageInfo.page[i].picInfo[j].pageId,
-                       pageInfo.page[i].picInfo[j].id,pageInfo.page[i].picInfo[j].x,pageInfo.page[i].picInfo[j].y,
-                       pageInfo.page[i].picInfo[j].width,pageInfo.page[i].picInfo[j].height,pageInfo.page[i].picInfo[j].level);
-                printf(" picIndex:0x%x,downlen:0x%x,uplen:0x%x \n",
-                       pageInfo.page[i].picInfo[j].picIndex,pageInfo.page[i].picInfo[j].downlen,pageInfo.page[i].picInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                addPic(i,&pageInfo.page[i].picInfo[j]);
             }
 
-            CPicAnalysis(fd,pageInfo.page[i].cpicNum,&(pageInfo.page[i].cpicInfo));
+			pageInfo.page[i].cpicInfo = (CPicParam_T *)malloc(sizeof(CPicParam_T) * pageInfo.page[i].cpicNum);
+            CPicAnalysis(fd,pageInfo.page[i].cpicNum,pageInfo.page[i].cpicInfo);
             qDebug()<<"cpicNum:"<<pageInfo.page[i].cpicNum;
             for(j = 0;j < pageInfo.page[i].cpicNum;j++)
             {
-                printf("[%s:%d]:page[%d].cpic[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d,level:%d \n",
-                       pageInfo.page[i].cpicInfo[j].global,pageInfo.page[i].cpicInfo[j].name,pageInfo.page[i].cpicInfo[j].pageId,
-                       pageInfo.page[i].cpicInfo[j].id,pageInfo.page[i].cpicInfo[j].x,pageInfo.page[i].cpicInfo[j].y,
-                       pageInfo.page[i].cpicInfo[j].width,pageInfo.page[i].cpicInfo[j].height,pageInfo.page[i].cpicInfo[j].level);
-                printf(" picIndex:0x%x,downlen:0x%x,uplen:0x%x \n",
-                       pageInfo.page[i].cpicInfo[j].picIndex,pageInfo.page[i].cpicInfo[j].downlen,pageInfo.page[i].cpicInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                addCPic(i,&pageInfo.page[i].cpicInfo[j]);
             }
 
-            CNumAnalysis(fd,pageInfo.page[i].numNum,&(pageInfo.page[i].numInfo));
-            qDebug()<<"numNum:"<<pageInfo.page[i].numNum;
+			pageInfo.page[i].numInfo = (CNumParam_T *)malloc(sizeof(CNumParam_T) * pageInfo.page[i].numNum);
+			CNumAnalysis(fd,pageInfo.page[i].numNum,pageInfo.page[i].numInfo);
+            //qDebug()<<"numNum:"<<pageInfo.page[i].numNum;
             for(j = 0;j < pageInfo.page[i].numNum;j++)
             {
-                printf("[%s:%d]:page[%d].Cnum[%d]info:\n",__FUNCTION__,__LINE__,i,j);
-                printf("***********************************\n");
-                printf(" global:%d,name:%s,pageId;%d,id:%d \n x:%d,y:%d,width:%d,height:%d \n level:%d,distype:%d,fpic:0x%x,bpic:0x%x \n",
-                       pageInfo.page[i].numInfo[j].global,pageInfo.page[i].numInfo[j].name,pageInfo.page[i].numInfo[j].pageId,
-                       pageInfo.page[i].numInfo[j].id,pageInfo.page[i].numInfo[j].x,pageInfo.page[i].numInfo[j].y,
-                       pageInfo.page[i].numInfo[j].width,pageInfo.page[i].numInfo[j].height,pageInfo.page[i].numInfo[j].level,
-                       pageInfo.page[i].numInfo[j].distype,pageInfo.page[i].numInfo[j].fpicorcol,pageInfo.page[i].numInfo[j].bpicorcol);
-                printf(" fontIndex:0x%x,text:0x%x,align:%d,downlen:%d,uplen:%d \n",
-                       pageInfo.page[i].numInfo[j].fontIndex,pageInfo.page[i].numInfo[j].text,pageInfo.page[i].numInfo[j].align,
-                       pageInfo.page[i].numInfo[j].downlen,pageInfo.page[i].numInfo[j].uplen);
-                printf("***********************************\n\n\n");
+                addCNum(i,&pageInfo.page[i].numInfo[j]);
             }
 
+        }else{
+
+            qDebug()<<" no page flag";
         }
 
     }
@@ -2110,4 +2136,299 @@ int SerialUtils::analysisBin()
 
 }
 
+
+void SerialUtils::addButton(int pageid,ButtonParam_T *ppar)
+{
+    MyButton *mbtn = new MyButton(ppar->id,ppar->name);
+    mbtn->setText(ppar->txt);
+
+    if(ppar->distype == 0){
+
+        mbtn->default_bgcolor = parse565(ppar->fpic);
+        mbtn->default_bgcolor_press = parse565(ppar->bpic);
+
+    }else{
+        mbtn->default_bgimg = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->fpic);
+        mbtn->default_bgimg_press = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpic);
+    }
+
+    if(ppar->level>1)
+        mbtn->raise();
+
+    mbtn->btnType = ppar->swType;
+
+    emit signal_addMWidget(pageid,
+                           mbtn,
+                           ppar->x,
+                           ppar->y,
+                           ppar->width,
+                           ppar->height);
+    mbtn->updateStyle();
+}
+void SerialUtils::addLabel(int pageid,LabelParam_T *ppar)
+{
+    MyLabel *mlable = new MyLabel(ppar->id,ppar->name);
+
+
+    if(ppar->distype == 0){
+        mlable->setBackgroudColor(parse565(ppar->bpicorcol));
+    }else
+        mlable->setBackgroudImg(ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol));
+
+    mlable->setTextInfo(parse565(ppar->fpicorcol),ppar->txt,ResourcesManager::getInstance()->getFontFamily(ppar->fontIndex),ppar->txtSpace);
+
+    mlable->setAlignment(parseAlignment(ppar->align));
+    emit signal_addMWidget(pageid,mlable,ppar->x,
+                           ppar->y,
+                           ppar->width,
+                           ppar->height);
+
+
+}
+
+void SerialUtils::addPanel(int pageid,PanelParam_T *ppar)
+{
+
+    MyDial *mydial = new MyDial(ppar->id,ppar->name);
+
+    if(ppar->distype == 0){
+        mydial->isuseimg = false;
+        mydial->bgcolor = parse565(ppar->bpicorcol);
+        mydial->indicatorcolo = parse565(ppar->fpicorcol);
+    }else{
+        mydial->isuseimg = true;
+        mydial->bgimg = ResourcesManager::getInstance()->getImage(ppar->bpicorcol);
+        mydial->indicatorcolo = parse565(ppar->fpicorcol);
+    }
+
+    mydial->indicatorW = ppar->linewidth;
+    mydial->indicatorAngle = ppar->angle;
+
+    emit signal_addMWidget(pageid,mydial,ppar->x,ppar->y,
+                           ppar->width,ppar->height);
+}
+
+void SerialUtils::addSlide(int pageid,SlideParam_T *ppar)
+{
+    MySilder *silder = new MySilder(ppar->id,ppar->name);
+
+
+    silder->hov = ppar->hov;
+    silder->radius = 0;
+    silder->silderw = ppar->wid;
+    silder->silderh = ppar->hgt;
+    silder->setValue(ppar->value);
+    silder->setMinimum(ppar->min);
+    silder->setMaximum(ppar->max);
+    if(ppar->distype == 0){
+
+        silder->backgroud_color = parse565(ppar->bpicorcol);
+        silder->hander_color = parse565(ppar->fpicorcol);
+
+    }else{
+        silder->isuseimg = true;
+        silder->hander_img = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->fpicorcol);
+        silder->backgroud_img = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol);
+
+    }
+
+    //silder->setOrientation(Qt::Horizontal);
+
+    emit signal_addMWidget(pageid,silder,ppar->x,ppar->y,
+                           ppar->width,ppar->height);
+    silder->updateStyle();
+}
+#include <QScrollBar>
+void SerialUtils::addRolllabel(int pageid,RolllabelParam_T *ppar)
+{
+    MyRollLabel *mrolllable = new MyRollLabel(1,"222");
+    //QFont font("16",10);
+    //font.setWordSpacing(100);//字间距
+
+
+    mrolllable->setFont(ResourcesManager::getInstance()->getFontFamily(ppar->fontIndex),ppar->txt,parse565(ppar->fpicorcol),ppar->txtSpace);
+
+    mrolllable->setAlignment(parseAlignment(ppar->align));
+
+    mrolllable->verticalScrollBar()->setVisible(false);
+    mrolllable->horizontalScrollBar()->setVisible(false);
+    if(ppar->enable){
+        if(ppar->dir){//水平
+
+            mrolllable->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            mrolllable->horizontalScrollBar()->setVisible(true);
+        }else{
+            mrolllable->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+            mrolllable->verticalScrollBar()->setVisible(true);
+        }
+    }else{
+        mrolllable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+        mrolllable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    }
+    if(ppar->distype == 0){
+        mrolllable->setBackgroudColor(parse565(ppar->bpicorcol));
+    }else
+        mrolllable->setBackgroudImg(ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol));
+
+
+    emit signal_addMWidget(pageid,mrolllable,ppar->x,ppar->y,ppar->width,ppar->height);
+
+}
+void SerialUtils::addGraph(int pageid,GraphParam_T *ppar)
+{
+
+    MyGraph *mg = new MyGraph(ppar->id,ppar->name);
+
+    mg->gridh = ppar->hinterval;
+    mg->gridw = ppar->winterval;
+    mg->gridColor = parse565(ppar->gridcolor);
+    mg->color1 = parse565(ppar->channelcolor0);
+    mg->color2 = parse565(ppar->channelcolor1);
+    mg->color3 = parse565(ppar->channelcolor2);
+    mg->color4 = parse565(ppar->channelcolor3);
+    if(ppar->distype == 0){
+        mg->isuseimg = false;
+        mg->bgcolor = parse565(ppar->bpicorcol);
+
+    }else{
+        mg->isuseimg = true;
+
+
+        mg->imgpath = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol);
+    }
+
+    emit signal_addMWidget(pageid,mg,ppar->x,ppar->y,ppar->width,ppar->height);
+
+}
+void SerialUtils::addRadio(int pageid,RadioParam_T *ppar){
+
+    MyRadio *mradio = new MyRadio(2,"111",4,0);
+
+    mradio->mdistance = ppar->distance;
+    mradio->mselectIndex = ppar->focusindex;
+    mradio->mradioCount = ppar->numofitem;
+    mradio->mhov = ppar->horv;
+    if(ppar->distype == 0){
+        mradio->misuseimg = false;
+        mradio->backgroudColor = parse565(ppar->bpicorcol);
+        mradio->foregroudColor = parse565(ppar->fpicorcol);
+    }else{
+        mradio->misuseimg = true;
+        mradio->foregroudImgPath = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->fpicorcol);
+        mradio->backgroudImgPath = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol);
+    }
+
+    emit signal_addMWidget(pageid,mradio,ppar->x,ppar->y,ppar->width,ppar->height);
+    mradio->layout();
+
+}
+void SerialUtils::addCheckBox(int pageid,CheckBoxParam_T *ppar){
+    qDebug()<<"addCheckBox";
+
+    MyCheck *myCheck = new MyCheck(ppar->id,ppar->name);
+
+
+
+    if(ppar->distype == 0){
+        myCheck->misuseimg = false;
+        myCheck->backgroudColor = parse565(ppar->bpicorcol);
+        myCheck->foregroudColor = parse565(ppar->fpicorcol);
+    }else{
+        myCheck->misuseimg = true;
+        myCheck->foregroudImgPath = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->fpicorcol);
+        myCheck->backgroudImgPath = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol);
+    }
+
+    emit signal_addMWidget(pageid,myCheck,ppar->x,ppar->y,ppar->width,ppar->height);
+    myCheck->layout();
+
+}
+void SerialUtils::addHotSpot(int pageid,HotSpotParam_T *ppar){
+    qDebug()<<"addHotSpot";
+    MyHotSpot *mhotspot = new MyHotSpot(ppar->id,ppar->name);
+
+    emit signal_addMWidget(pageid,mhotspot,ppar->x,ppar->y,ppar->width,ppar->height);
+}
+void SerialUtils::addTimer(int pageid,TimerParam_T *ppar){
+    qDebug()<<"addTimer";
+}
+void SerialUtils::addVariable(int pageid,VariableParam_T *ppar){
+    qDebug()<<"addVariable";
+}
+void SerialUtils::addPic(int pageid,PicParam_T *ppar){
+    qDebug()<<"addPic";
+    qDebug()<<"addPic:"<<ppar->picIndex;
+    qDebug()<<"addPic:"<<ResourcesManager::getInstance()->getImageAbsolutePath(ppar->picIndex);
+
+    MyPic *mypic = new MyPic(ppar->id,ppar->name);
+
+    mypic->img = QImage(ResourcesManager::getInstance()->getImageAbsolutePath(ppar->picIndex));
+
+    emit signal_addMWidget(pageid,mypic,ppar->x,ppar->y,ppar->width,ppar->height);
+}
+void SerialUtils::addCPic(int pageid,CPicParam_T *ppar){
+    qDebug()<<"addCPic";
+
+    MyPic *mypic = new MyPic(ppar->id,ppar->name);
+
+    qDebug()<<"addCPic:"<<ppar->picIndex;
+    qDebug()<<"addCPic:"<<ResourcesManager::getInstance()->getImageAbsolutePath(ppar->picIndex);
+    QImage img = QImage(ResourcesManager::getInstance()->getImageAbsolutePath(ppar->picIndex));
+
+    mypic->img = img.copy(ppar->x,ppar->y,ppar->width,ppar->height);
+
+    emit signal_addMWidget(pageid,mypic,ppar->x,ppar->y,ppar->width,ppar->height);
+
+}
+void SerialUtils::addCNum(int pageid,CNumParam_T *ppar){
+    qDebug()<<"addCNum";
+    //QLCDNumber lcdnumber;
+
+    MyLabel *mlable = new MyLabel(ppar->id,ppar->name);
+
+
+    if(ppar->distype == 0){
+        mlable->setBackgroudColor(parse565(ppar->bpicorcol));
+    }else
+        mlable->setBackgroudImg(ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpicorcol));
+
+
+    QString txtnumber = QString::number(ppar->text);
+    mlable->setTextInfo(parse565(ppar->fpicorcol),txtnumber.toLatin1().data(),ResourcesManager::getInstance()->getFontFamily(ppar->fontIndex),1);
+
+    mlable->setAlignment(parseAlignment(ppar->align));
+    emit signal_addMWidget(pageid,mlable,ppar->x,
+                           ppar->y,
+                           ppar->width,
+                           ppar->height);
+
+}
+void SerialUtils::addPgbar(int pageid,PgbarParam_T *ppar)
+{
+
+    qDebug()<<"addPgbar";
+    MyProgressbar *processbar = new MyProgressbar(ppar->id,ppar->name);
+
+
+    processbar->setValue(ppar->percent);
+    processbar->hov = ppar->hov;
+    processbar->radius = 0;
+    if(ppar->distype == 0){
+        processbar->isuseimg = false;
+        processbar->setBackgroudColor(parse565(ppar->bpic));
+        processbar->setForegroundColor(parse565(ppar->fpic));
+    }else{
+        processbar->isuseimg = true;
+
+        QString bgimg = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->bpic);
+        QString fgimg = ResourcesManager::getInstance()->getImageAbsolutePath(ppar->fpic);
+        processbar->setBackgroudImg(bgimg);
+        processbar->setForegroundImg(fgimg);
+    }
+
+    emit signal_addMWidget(pageid,processbar,ppar->x,ppar->y,
+                           ppar->width,ppar->height);
+
+    processbar->updateStyle();
+}
 

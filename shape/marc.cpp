@@ -19,15 +19,15 @@ void MArc::draw(QPainter *pt)
 
     if(misfill){
 
-        pt->setPen(QPen(QColor(0,0,0,0),msize,Qt::SolidLine,Qt::RoundCap));
+        pt->setPen(Qt::NoPen);
         pt->setBrush(QBrush(mcolor,Qt::SolidPattern));
-        pt->drawPie(leftx,lefty,rightx,righty,mstartangle*16,mendangle*16);
+        pt->drawPie(leftx,lefty,mradius*2,mradius*2,mstartangle*16,mendangle*16);
 
     }else{
 
         pt->setPen(QPen(mcolor,msize,Qt::SolidLine,Qt::RoundCap));
         pt->setBrush(QBrush(QColor(0,0,0,0),Qt::SolidPattern));
-        pt->drawArc(leftx,lefty,rightx,righty,mstartangle*16,mendangle*16);
+        pt->drawArc(leftx,lefty,mradius*2,mradius*2,mstartangle*16,mendangle*16);
     }
 
 

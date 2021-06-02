@@ -19,9 +19,13 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     mywidget/mybutton.cpp \
+    mywidget/mycheck.cpp \
+    mywidget/mydial.cpp \
     mywidget/mygraph.cpp \
+    mywidget/myhotspot.cpp \
     mywidget/mylabel.cpp \
     mywidget/mypage.cpp \
+    mywidget/mypic.cpp \
     mywidget/myprogressbar.cpp \
     mywidget/myradio.cpp \
     mywidget/myrolllabel.cpp \
@@ -43,9 +47,13 @@ SOURCES += \
 HEADERS += \
     mainwindow.h \
     mywidget/mybutton.h \
+    mywidget/mycheck.h \
+    mywidget/mydial.h \
     mywidget/mygraph.h \
+    mywidget/myhotspot.h \
     mywidget/mylabel.h \
     mywidget/mypage.h \
+    mywidget/mypic.h \
     mywidget/myprogressbar.h \
     mywidget/myradio.h \
     mywidget/myrolllabel.h \

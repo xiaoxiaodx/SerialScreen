@@ -3,18 +3,7 @@
 MyProgressbar::MyProgressbar(int id,QString name):mid(id),mname(name)
 {
 
-//    setStyleSheet("QProgressBar{border:1px solid #FFFFFF;"
-//                  "height:30;"
-//                  "background:red;"
-//                  "text-align:center;"
-//                  "color:rgb(255,255,0);"
-//                  "border-radius:10px;}"
-//                  "QProgressBar::chunk{"
-//                  "border-radius:5px;"    // 斑马线圆角
-//                  "border:1px solid black;" // 黑边，默认无边
-//                  "background-color:skyblue;"
-//                  "width:0px;margin:0.5px;}" // 宽度和间距
-//                  );
+setObjectName(name);
 
 }
 
@@ -46,20 +35,22 @@ void MyProgressbar::updateStyle()
 
     QString qss,horstr;
 
-    if(hov>0){
-        horstr =":vertical";
-        setOrientation(Qt::Vertical);
-    }else
-        horstr = "";
 
+    if(hov>0){
+        horstr ="horizontal";
+        setOrientation(Qt::Horizontal);
+    }else{
+        horstr = "vertical";
+        setOrientation(Qt::Vertical);
+    }
     if(!isuseimg){
-        QString qssbackgroud = "QProgressBar"+horstr+"{"+
+        QString qssbackgroud = "QProgressBar:"+horstr+"{"+
                 "border-radius:"+QString::number(radius)+"px;"+
                 "background-color:rgb("+QString::number(foregroud_color.red())+","+QString::number(backgroud_color.green())+","+QString::number(backgroud_color.blue())+");"+
                 "text-align:center;"
                 "}";
 
-        QString qssforegroud = "QProgressBar::chunk"+horstr+"{"
+        QString qssforegroud = "QProgressBar::chunk:"+horstr+"{"
                                 "background-color:rgb("+QString::number(foregroud_color.red())+","+QString::number(foregroud_color.green())+","+QString::number(foregroud_color.blue())+")"
                                 "}";
 

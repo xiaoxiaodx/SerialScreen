@@ -25,6 +25,10 @@ ResourcesManager::ResourcesManager()
 
 }
 
+QFont ResourcesManager::getFont(int index){
+
+    //onLoadFont()
+}
 
 QImage ResourcesManager::getImage(int index)
 {
@@ -95,16 +99,44 @@ void ResourcesManager::saveImage(int index,int w,int h,int format,char *data)
     }
 
 
-    QImage img((unsigned char*)data,w,h,QImage::Format_RGB16);
+    short *rgb565 = new short[w*h];
+
+    memset(rgb565,0,w*h*2);
+
+    for (int i=0;i<w*h;i++) {
+
+        unsigned short h =  0x00ff & data[i*2+1];
+        unsigned short l =  0x00ff & data[i*2];
+        unsigned short bgr565value = h*256+ l;
+
+        unsigned int r_565 = bgr565value & 0x0000001f;
+        unsigned int g_565 = bgr565value & 0x000007f0;
+        unsigned int b_565 = bgr565value & 0x0000f800;
+
+
+        int tmpv = 0;
+
+        tmpv |= g_565;
+        tmpv |= r_565<<11;
+        tmpv |= b_565>>11;
+
+        rgb565[i] =  tmpv;
+    }
+
+
+    QImage img((unsigned char*)rgb565,w,h,QImage::Format_RGB16);
     QString filename = QString::number(index)+".png";
     if(img.save(filename,"PNG")){
 
-        mapImage.insert(index,desFileDir+QString::number(index)+".png");
+        mapImage.insert(index,desFileDir+"/"+QString::number(index)+".png");
     }else{
 
         DebugLog::getInstance()->writeLog("image save is fail,filedir:"+desFileDir+",filename:"+filename);
 
     }
+
+     delete[] rgb565;
+
 
 
 }
@@ -136,6 +168,8 @@ void ResourcesManager::saveFont(int index,char *data,int len)
 
     }
 
+    if(fontfile.isOpen())
+        fontfile.close();
 
 
 }
@@ -167,7 +201,7 @@ bool ResourcesManager::onLoadFont(const QString& fontPath,QString &fontfamilynam
     }
 
     fontfamilyname = lFontFamily.at(0);
-   // QFont font(lFontFamily.at(0));
+    // QFont font(lFontFamily.at(0));
     //qApp->setFont(font);
     qDebug()<<"字体加载成功";
     return true;

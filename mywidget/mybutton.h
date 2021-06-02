@@ -9,6 +9,7 @@ public:
     MyButton(int id,QString name);
 
 
+
     void updateStyle();
 
     void slot_clicked();
@@ -20,6 +21,7 @@ public:
 
     //0正常按钮，1双态按钮
     int btnType;
+
 
     QColor default_bgcolor_press;
     QColor default_bgcolor;

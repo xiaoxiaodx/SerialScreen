@@ -11,7 +11,7 @@ public:
 
     void setBackgroudImg(QString imgpath);
     void setBackgroudColor(QColor color);
-    void setFont(QFont font,QColor fontcolor);
+    void setFont(QString family ,char* txt,QColor fontcolor,int d);
     void setText(QString txt);
     void addText(QString txt);
     void clearText(QString txt);
