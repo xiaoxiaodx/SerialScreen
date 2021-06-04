@@ -46,7 +46,7 @@ void MyProgressbar::updateStyle()
     if(!isuseimg){
         QString qssbackgroud = "QProgressBar:"+horstr+"{"+
                 "border-radius:"+QString::number(radius)+"px;"+
-                "background-color:rgb("+QString::number(foregroud_color.red())+","+QString::number(backgroud_color.green())+","+QString::number(backgroud_color.blue())+");"+
+                "background-color:rgb("+QString::number(backgroud_color.red())+","+QString::number(backgroud_color.green())+","+QString::number(backgroud_color.blue())+");"+
                 "text-align:center;"
                 "}";
 
@@ -57,20 +57,19 @@ void MyProgressbar::updateStyle()
         qss = qssbackgroud + qssforegroud;
     }else{
 
-        QString qssbackgroud = "QProgressBar"+horstr+"{"+
-                "border-radius:"+QString::number(radius)+"px;"+
-                "border-image: url("+backgroud_img+");"+
+        QString qssbackgroud = "QProgressBar:"+horstr+"{"+
+                "border-image:url("+backgroud_img+");"+
                 "text-align:center;"
                 "}";
 
-        QString qssforegroud = "QProgressBar::chunk"+horstr+"{"
-                                "border-image: url("+foregroud_img+");}";
+        QString qssforegroud = "QProgressBar::chunk:"+horstr+"{"
+                                "border-image:url("+foregroud_img+");}";
 
         qss = qssbackgroud + qssforegroud;
 
     }
 
-    qDebug()<<"qss:"<<qss;
+    qDebug()<<"MyProgressbar qss:"<<qss;
     setStyleSheet(qss);
 
 }

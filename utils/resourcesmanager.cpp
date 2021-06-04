@@ -80,6 +80,7 @@ void ResourcesManager::saveImage(int index,int w,int h,int format,char *data)
 {
 
 
+    qDebug()<<"saveImage:"<<index;
 
     QString runfilepath = QCoreApplication::applicationDirPath();
 
@@ -123,8 +124,11 @@ void ResourcesManager::saveImage(int index,int w,int h,int format,char *data)
         rgb565[i] =  tmpv;
     }
 
+    //格式是bgr565
+    //QImage img((unsigned char*)rgb565,w,h,QImage::Format_RGB16);
+    //格式是rbg565
+    QImage img((unsigned char*)data,w,h,QImage::Format_RGB16);
 
-    QImage img((unsigned char*)rgb565,w,h,QImage::Format_RGB16);
     QString filename = QString::number(index)+".png";
     if(img.save(filename,"PNG")){
 

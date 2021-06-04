@@ -667,7 +667,7 @@ public:
     int analysisBin();
 signals:
 
-    void signal_addPage(int id,QString name);
+    void signal_addPage(int id,QString name,bool isuseimg,QString imgpaht,QColor color);
     void signal_addMWidget(int pageid,QWidget *mwbase,int x,int y,int w,int h);
 
     void signal_switchPage(int id);

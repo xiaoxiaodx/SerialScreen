@@ -40,15 +40,14 @@ Qt::Alignment parseAlignment(int v){
     case 2:
        return Qt::AlignRight | Qt::AlignTop;
     case 4:
-        return Qt::AlignVCenter | Qt::AlignLeft;
+        return Qt::AlignBottom | Qt::AlignLeft;
 
     case 5:
         return Qt::AlignBottom | Qt::AlignHCenter;
     case 6:
         return Qt::AlignBottom | Qt::AlignRight;
     case 8:
-        return Qt::AlignBottom | Qt::AlignLeft;
-
+        return Qt::AlignVCenter | Qt::AlignLeft;
     case 9:
           return Qt::AlignVCenter | Qt::AlignHCenter;
     case 10:

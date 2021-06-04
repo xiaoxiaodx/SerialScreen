@@ -62,11 +62,7 @@ void MyRadio::layout(){
             "QRadioButton::indicator::checked {background-color:rgb(0,0,255);}";
     setStyleSheet(qss);
 
-    qDebug()<<"MyRadio qss:"<<qss;
-    qDebug()<<"MyRadio qss1:"<<qss1;
-    qDebug()<<"mradioCount:"<<mradioCount;
-    qDebug()<<"mhov:"<<mhov;
-    qDebug()<<"mselectIndex:"<<mselectIndex;
+
 
 
 
@@ -91,7 +87,7 @@ void MyRadio::layout(){
 
         connect(radiobtn,&QRadioButton::pressed,this,[=](){
 
-            qDebug()<<"click:"<<i<<","<<mselectIndex;
+            //qDebug()<<"click:"<<i<<","<<mselectIndex;
 
         });
         radiobtn->show();

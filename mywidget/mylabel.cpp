@@ -16,30 +16,32 @@ void MyLabel::setTextInfo(QColor fontcolor,char* txt,QString family,int Strdista
     font.setWordSpacing(Strdistance);
     this->setFont(font);
     this->setText(gbk_string);
-    QPalette pe;
-    pe.setColor(QPalette::WindowText,fontcolor);
-    this->setPalette(pe);
 
+    mfontcolor = fontcolor;
 
-
-}
-
-void MyLabel::setBackgroudImg(QString imgpath)
-{
-
-    QImage img(imgpath);
-    QPalette pal = this->palette();
-    pal.setBrush(QPalette::Base,QBrush(img.scaled(this->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation)));
-    this->setPalette(pal);
+    updateStyle();
 
 }
 
-void MyLabel::setBackgroudColor(QColor color)
-{
-    QPalette pal = this->palette();
-    pal.setBrush(QPalette::Base,color);
-    this->setPalette(pal);
+
+void MyLabel::updateStyle(){
+
+
+
+    QString qss_bg = "";
+
+    if(misuseimg){
+        qss_bg= "QLabel{border-image: url("+mimgpath+");"
+                "color:rgb("+QString::number(mfontcolor.red())+","+QString::number(mfontcolor.green())+","+QString::number(mfontcolor.blue())+");}";
+    }else
+        qss_bg= "QLabel {"
+                "color:rgb("+QString::number(mfontcolor.red())+","+QString::number(mfontcolor.green())+","+QString::number(mfontcolor.blue())+");"
+                "background-color:rgba("+QString::number(mbgcolor.red())+","+QString::number(mbgcolor.green())+","+QString::number(mbgcolor.blue())+","+QString::number(mbgcolor.alpha())+");}";
+
+
+    setStyleSheet(qss_bg);
 }
+
 #include <QDebug>
 void MyLabel::setTxt(QString txt)
 {

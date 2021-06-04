@@ -43,16 +43,16 @@ void MySilder::updateStyle()
                 "margin-top: -3px;"+
                 "margin-bottom: -3px;"+
                 "border-radius: 5px;}";
-        qsssubpage = "QSlider::sub-page:"+horstr+"{"+
-                "background:rgb("+QString::number(backgroud_color.red())+","+QString::number(backgroud_color.green())+","+QString::number(backgroud_color.blue())+");"+
-                "height: "+QString::number(this->height())+";"+
-                "border-radius: 2px;}";
-
+//        qsssubpage = "QSlider::sub-page:"+horstr+"{"+
+//                "background:rgb("+QString::number(backgroud_color.red())+","+QString::number(backgroud_color.green())+","+QString::number(backgroud_color.blue())+");"+
+//                "height: "+QString::number(this->height())+";"+
+//                "border-radius: 2px;}";
+        qsssubpage = "";
 
     }else{
 
         qssgroove = "QSlider::groove:"+horstr+"{"+
-                "border-image: url("+backgroud_img+");"+
+                "border-image: url("+hander_img+");"+
                 "height:"+QString::number(this->height())+";"+
                 "border-radius: 1px;"+
                 "padding-left:-1px;"+
@@ -60,19 +60,21 @@ void MySilder::updateStyle()
                 "}";
 
         qsshandle = "QSlider::handle:"+horstr+"{"+
-                "border-image: url("+hander_img+");"+
+                "border-image: url("+backgroud_img+");"+
                 "width:"+QString::number(silderw)+";"+
                 "height:"+QString::number(silderh)+";"+
                 "margin-top: -3px;"+
                 "margin-bottom: -3px;"+
                 "border-radius: 5px;}";
-        qsssubpage = "QSlider::sub-page:"+horstr+"{"+
-                "border-image: url("+backgroud_img+");"+
-                "height: "+QString::number(this->height())+";"+
-                "border-radius: 2px;}";
+//        qsssubpage = "QSlider::sub-page:"+horstr+"{"+
+//                "border-image: url("+hander_img+");"+
+//                "height: "+QString::number(this->height())+";"+
+//                "border-radius: 2px;}";
+
+        qsssubpage ="";
     }
 
-    qDebug()<<"qss:"<<qssgroove+qsshandle+qsssubpage;
+    //qDebug()<<"MySilder qss:"<<qssgroove+qsshandle+qsssubpage;
     setStyleSheet(qssgroove+qsshandle+qsssubpage);
 
 }

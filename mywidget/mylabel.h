@@ -16,13 +16,16 @@ public:
     void setTxt(QString);
     QString txt();
 
-
-    void setBackgroudImg(QString imgpath);
-    void setBackgroudColor(QColor color);
+    void updateStyle();
     void setTextInfo(QColor fontcolor,char* txt,QString family,int Strdistance);
     int mid;
     QString mname;
     QString mtxt;
+
+    bool misuseimg;
+    QString mimgpath;
+    QColor mbgcolor;
+    QColor mfontcolor;
 };
 
 #endif // MYLABEL_H

@@ -25,7 +25,7 @@ public:
 
     QColor default_bgcolor_press;
     QColor default_bgcolor;
-
+    QColor mfontcolor;
 
     //16位深565格式
     QString default_bgimg_press;//文件所在绝对路径
@@ -36,6 +36,7 @@ public:
 
     QString qss_bg;
     QString qss_bg_press;
+
 };
 
 #endif // MYBUTTON_H

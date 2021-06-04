@@ -12,37 +12,33 @@ MyButton::MyButton(int id,QString name):mid(id),mname(name)
 void MyButton::updateStyle(){
 
 
-    if(btnType == 0){
 
-        setChecked(false);
+    QString qssfontcolor = "color:rgb("+QString::number(mfontcolor.red())+","+QString::number(mfontcolor.green())+","+QString::number(mfontcolor.blue())+");";
 
-        if(isuseimgbg){
-            qss_bg_press = "QPushButton:pressed{border-image: url("+default_bgimg_press+");}";
-            qss_bg = "QPushButton{border-image: url("+default_bgimg+");}";
-        }else{
-
-            QColor press_color = default_bgcolor_press;
-            QColor color = default_bgcolor;
-            qss_bg_press = "QPushButton:pressed{background-color:rgb("+QString::number(press_color.red())+","+QString::number(press_color.green())+","+QString::number(press_color.blue())+");}";
-            qss_bg= "QPushButton{background-color:rgb("+QString::number(color.red())+","+QString::number(color.green())+","+QString::number(color.blue())+");}";
-
-        }
-
+    if(isuseimgbg){
+        qss_bg_press = "border-image: url("+default_bgimg_press+");";
+        qss_bg = "border-image: url("+default_bgimg+");";
     }else{
 
-
-        setCheckable(true);
-        qss_bg_press = "QPushButton:checked{border-image: url("+default_bgimg_press+");}";
-        qss_bg = "QPushButton{border-image: url("+default_bgimg+");}";
-
+        QColor press_color = default_bgcolor_press;
+        QColor color = default_bgcolor;
+        qss_bg_press = "background-color:rgba("+QString::number(press_color.red())+","+QString::number(press_color.green())+","+QString::number(press_color.blue())+","+QString::number(press_color.alpha())+");";
+        qss_bg= "background-color:rgba("+QString::number(color.red())+","+QString::number(color.green())+","+QString::number(color.blue())+","+QString::number(color.alpha())+");";
 
     }
 
-    qDebug()<<"qss:"<<qss_bg+qss_bg_press;
-
-    setStyleSheet(qss_bg+qss_bg_press);
 
 
+
+
+    QString qss = "QPushButton{"+qssfontcolor+qss_bg+"}QPushButton:pressed{"+qssfontcolor+qss_bg_press+"}";
+
+
+
+
+    setStyleSheet(qss);
+
+   // qDebug()<<"qss:"<<qss;
 }
 
 

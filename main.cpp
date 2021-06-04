@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     onLoadFont("华文新魏1111.ttf");
     MainWindow w;
-    w.show();
+    w.showFullScreen();
 //    QFontDatabase database;
 //    foreach (const QString &family, database.families())
 //    {

@@ -17,7 +17,7 @@ public:
     ~MainWindow();
 
 
-    void addPage(int id,QString name);
+    void addPage(int id,QString name,bool isuseimg,QString imgpaht,QColor color);
     void addMWidget(QWidget *mwbase,int x,int y,int w,int h);
 
 
@@ -30,7 +30,7 @@ public slots:
     void slot_serialRead();
     void slot_switchPage(int id);
     void slot_addShape(Shape *shpe);
-    void slot_addPage(int id,QString name);
+    void slot_addPage(int id,QString name,bool isuseimg,QString imgpaht,QColor color);
     void slot_changeWidgetState(bool isshow,QString name,int state);
 
     void slot_process_cmd(QString cmdtype,QString cmdstr);

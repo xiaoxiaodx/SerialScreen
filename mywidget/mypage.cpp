@@ -2,7 +2,7 @@
 #include <QDebug>
 MyPage::MyPage(int id,QString name):id(id),name(name)
 {
-setObjectName(name);
+    setObjectName(name);
 }
 
 
@@ -21,9 +21,22 @@ void MyPage::addWidget(QWidget *wd){
 
 }
 
+
+
+
 void MyPage::paintEvent(QPaintEvent *event){
 
     QPainter painter(this);
+
+
+    if(isusebgimg){
+        if(img == nullptr)
+            img = new QImage(bgimgpath);
+
+        painter.drawImage(this->rect(),*img);
+    }else{
+        painter.fillRect(this->rect(),QBrush(bgcolor));
+    }
     painter.setRenderHint(QPainter::Antialiasing,true);
 
     for(int i=0;i<listShape.length();i++){

@@ -55,6 +55,16 @@ void MainWindow::init(){
     this->setCentralWidget(rootWidget);
 
     serialUtils.analysisBin();
+
+
+    int nCount = rootWidget->count();
+    for (int i=0;i<nCount;i++) {
+
+        MyPage *curpage = (MyPage*)(rootWidget->widget(i));
+
+
+    }
+
     serialUtils.ParseSerialInt();
     initSerialPort(115200);
 
@@ -71,14 +81,15 @@ void MainWindow::btntest(){
     int btnindex = 1;
 
 
-    QPushButton *btn_addbtn = new QPushButton("添加按钮",this);
+    QPushButton *btn_addbtn = new QPushButton("测试",this);
     btn_addbtn->setGeometry((10+btn_w)*(btnindex++),h-btn_h-10,btn_w,btn_h);
 
     connect(btn_addbtn,&QPushButton::pressed,this,[=] ()  {
 
         qDebug()<<"add btn";
 
-        btn_addbtn->setProperty("text","aaa");
+
+        switchPage();
 
 
     });
@@ -111,16 +122,16 @@ void MainWindow::addMWidget(QWidget *mwbase,int x,int y,int w,int h){
     mwbase->show();
 }
 
-void MainWindow::addPage(int id,QString name){
+void MainWindow::addPage(int id,QString name,bool isuseimg,QString imgpaht,QColor color){
 
 
     MyPage *page = new MyPage(id,name);
-
-
-    //QImage img(":/res/whiteb.png");
-    // page->addShape(new MImage(0,0,100,100,10,img));
-    // page->addShape( new MRect(50,50,70,70,true,QColor(0,0,255),10));
-    //page->addShape(new MImage(0,0,100,100,5,img));
+    page->isusebgimg = isuseimg;
+    if(isuseimg){
+        page->bgimgpath = imgpaht;
+    }else{
+        page->bgcolor = color;
+    }
     rootWidget->addWidget(page);
 
 }
@@ -153,10 +164,16 @@ void MainWindow::slot_changeWidgetState(bool isshow,QString name,int state){
 
 }
 
-void MainWindow::slot_addPage(int id,QString name){
+void MainWindow::slot_addPage(int id,QString name,bool isuseimg,QString imgpaht,QColor color){
 
-    qDebug()<<"add page";
+
     MyPage *page = new MyPage(id,name);
+    page->isusebgimg = isuseimg;
+    if(isuseimg){
+        page->bgimgpath = imgpaht;
+    }else{
+        page->bgcolor = color;
+    }
     rootWidget->addWidget(page);
 
     qDebug()<<"add page succ";
@@ -166,7 +183,7 @@ void MainWindow::slot_addMWidget(int pageid,QWidget *mwbase,int x,int y,int w,in
 {
 
 
-    qDebug()<<"添加控件";
+   // qDebug()<<"添加控件";
     MyPage *page =  (MyPage*)rootWidget->widget(pageid);
 
     mwbase->setParent(page);

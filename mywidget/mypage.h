@@ -18,6 +18,11 @@ public:
     int getId() const;
     void setId(int value);
 
+
+    bool isusebgimg = false;
+    QColor bgcolor;
+    QString bgimgpath;
+    QImage *img = nullptr;
 protected:
     void paintEvent(QPaintEvent *event);
     void mousePressEvent(QMouseEvent *event);        //按下
